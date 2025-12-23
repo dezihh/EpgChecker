@@ -1,0 +1,5 @@
+# IPTV EPG Mapper - Web Version Requirements
+# Installation: pip install -r requirements.txt
+
+Flask>=3.0.0
+requests>=2.31.0
