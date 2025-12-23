@@ -1,0 +1,14 @@
+{
+  "server": {
+    "host": "0.0.0.0",
+    "port": 8081
+  },
+  "xstream": {
+    "url": "http://mein-server:80",
+    "username": "mein-user",
+    "password": "mein-pass"
+  },
+  "xml_epg": {
+    "url": "http://example.com/epg.xml.gz"
+  }
+}
