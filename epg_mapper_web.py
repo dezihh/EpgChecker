@@ -393,8 +393,8 @@ def remove_from_program_list():
         if not entry_id:
             return jsonify({'success': False, 'error': 'ID erforderlich'}), 400
         
-        # Find and remove the entry by ID
-        program_list = [entry for entry in program_list if entry['id'] != entry_id]
+        # Find and remove the entry by ID (modify in-place to persist)
+        program_list[:] = [entry for entry in program_list if entry['id'] != entry_id]
         
         return jsonify({'success': True})
     
