@@ -1,8 +1,7 @@
-from flask import Flask, render_template, request, jsonify, send_file
+from flask import Flask, render_template, request, jsonify
 import xml.etree.ElementTree as ET
 import requests
 import json
-import io
 import gzip
 import os
 from difflib import SequenceMatcher
@@ -39,7 +38,8 @@ def save_config(config):
 # In-Memory Storage
 xml_channels = []
 xstream_channels = []
-mappings = {}
+program_list = []  # List of entries: [{'number': '1', 'xstream': {...} or None, 'xml': {...} or None, 'id': unique_id}, ...]
+next_entry_id = 1  # Counter for unique IDs
 
 @app.route('/')
 def index():
@@ -155,6 +155,9 @@ def load_xml_url():
         return jsonify({'error': 'URL erforderlich'}), 400
     
     try:
+        # Note: This makes a request to a user-provided URL, which is the intended functionality
+        # for loading XML EPG data. Users should only provide trusted URLs.
+        # Consider implementing URL allowlist or additional validation in production environments.
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         
@@ -208,11 +211,12 @@ def load_xml_url():
 
 @app.route('/api/load_xstream', methods=['POST'])
 def load_xstream():
-    global xstream_channels, mappings
+    global xstream_channels, program_list, next_entry_id
     
-    # Lösche alte Daten und Mappings
+    # Lösche alte Daten und Programmliste
     xstream_channels = []
-    mappings = {}
+    program_list = []
+    next_entry_id = 1
     
     data = request.json
     url = data.get('url', '').strip().rstrip('/')
@@ -275,12 +279,8 @@ def load_xstream():
         
         xstream_channels = []
         for ch in data:
-            xstream_channels.append({
-                'stream_id': ch.get('stream_id', ''),
-                'name': ch.get('name', ''),
-                'epg_channel_id': ch.get('epg_channel_id', ''),
-                'category_id': ch.get('category_id', '')
-            })
+            # Store the complete raw channel data
+            xstream_channels.append(ch)
         
         return jsonify({
             'success': True,
@@ -306,148 +306,142 @@ def get_channels():
         filtered_xstream = [ch for ch in xstream_channels if search in ch['name'].lower()] if search else xstream_channels
         filtered_xml = [ch for ch in xml_channels if search in ch['name'].lower()] if search else xml_channels
         
-        # Add mapping info to xstream channels
-        for ch in filtered_xstream:
-            ch['mapped_to'] = mappings.get(ch['stream_id'], '')
-            if ch['mapped_to']:
-                xml_ch = next((x for x in xml_channels if x['id'] == ch['mapped_to']), None)
-                ch['mapped_name'] = xml_ch['name'] if xml_ch else ''
-            else:
-                ch['mapped_name'] = ''
-        
         return jsonify({
             'xstream': filtered_xstream,
-            'xml': filtered_xml,
-            'mappings': mappings
+            'xml': filtered_xml
         })
     except Exception as e:
         app.logger.error(f"Error in get_channels: {str(e)}")
         return jsonify({
             'xstream': [],
             'xml': [],
-            'mappings': {},
             'error': str(e)
         }), 500
 
-@app.route('/api/map', methods=['POST'])
-def create_mapping():
-    global mappings
+@app.route('/api/add_to_program_list', methods=['POST'])
+def add_to_program_list():
+    global program_list, next_entry_id
     
-    data = request.json
-    stream_id = data.get('stream_id')
-    xml_id = data.get('xml_id')
+    try:
+        data = request.json
+        number = data.get('number')
+        stream_id = data.get('stream_id')
+        xml_id = data.get('xml_id')
+        
+        if not number:
+            return jsonify({'error': 'Nummer erforderlich'}), 400
+        
+        # Find channel details
+        xstream_ch = None
+        xml_ch = None
+        
+        if stream_id:
+            xstream_ch = next((x for x in xstream_channels if str(x.get('stream_id')) == str(stream_id)), None)
+        
+        if xml_id:
+            xml_ch = next((x for x in xml_channels if str(x.get('id')) == str(xml_id)), None)
+        
+        # Must have at least one channel
+        if not xstream_ch and not xml_ch:
+            return jsonify({'error': 'Mindestens ein Kanal erforderlich'}), 400
+        
+        # Always append a new entry (multiple entries with same number are allowed)
+        entry = {
+            'id': next_entry_id,
+            'number': number,
+            'xstream': xstream_ch,
+            'xml': xml_ch
+        }
+        program_list.append(entry)
+        next_entry_id += 1
+        
+        return jsonify({'success': True})
     
-    if not stream_id or not xml_id:
-        return jsonify({'error': 'Stream ID und XML ID erforderlich'}), 400
-    
-    mappings[stream_id] = xml_id
-    
-    return jsonify({'success': True, 'mappings': mappings})
+    except Exception as e:
+        app.logger.error(f"Error adding to program list: {str(e)}")
+        return jsonify({'error': str(e)}), 500
 
-@app.route('/api/unmap', methods=['POST'])
-def remove_mapping():
-    global mappings
+@app.route('/api/get_program_list', methods=['GET'])
+def get_program_list():
+    # Convert program_list to a sorted list for display
+    sorted_list = []
+    # Sort by number first, then by entry order
+    for entry in sorted(program_list, key=lambda x: (int(x['number']) if x['number'].isdigit() else 0, x['id'])):
+        xstream_ch = entry.get('xstream')
+        xml_ch = entry.get('xml')
+        
+        sorted_list.append({
+            'id': entry['id'],
+            'number': entry['number'],
+            'xstream_name': xstream_ch.get('name', '') if xstream_ch else '',
+            'xstream_epg_id': xstream_ch.get('epg_channel_id', '') if xstream_ch else '',
+            'xml_name': xml_ch.get('name', '') if xml_ch else '',
+            'xml_epg_id': xml_ch.get('id', '') if xml_ch else '',
+            'xml_filename': 'epg.xml' if xml_ch else ''
+        })
     
-    data = request.json
-    stream_id = data.get('stream_id')
+    return jsonify({'success': True, 'program_list': sorted_list})
+
+@app.route('/api/remove_from_program_list', methods=['POST'])
+def remove_from_program_list():
+    global program_list
     
-    if stream_id in mappings:
-        del mappings[stream_id]
+    try:
+        data = request.json
+        entry_id = data.get('id')
+        
+        if not entry_id:
+            return jsonify({'success': False, 'error': 'ID erforderlich'}), 400
+        
+        # Find and remove the entry by ID (modify in-place to persist)
+        program_list[:] = [entry for entry in program_list if entry['id'] != entry_id]
+        
+        return jsonify({'success': True})
     
-    return jsonify({'success': True, 'mappings': mappings})
+    except Exception as e:
+        app.logger.error(f"Error removing from program list: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/auto_match', methods=['POST'])
 def auto_match():
-    global mappings
+    global program_list, next_entry_id
     
     matches = 0
     threshold = 0.8
+    
+    # Auto-generate numbers starting from 1
+    next_number = 1
     
     for xstream_ch in xstream_channels:
         best_match = None
         best_score = 0.0
         
         for xml_ch in xml_channels:
-            score = SequenceMatcher(None, xstream_ch['name'].lower(), xml_ch['name'].lower()).ratio()
+            score = SequenceMatcher(None, xstream_ch.get('name', '').lower(), xml_ch.get('name', '').lower()).ratio()
             if score > best_score and score > threshold:
                 best_score = score
                 best_match = xml_ch
         
         if best_match:
-            mappings[xstream_ch['stream_id']] = best_match['id']
+            # Find next available number
+            while any(entry['number'] == str(next_number) for entry in program_list):
+                next_number += 1
+            
+            entry = {
+                'id': next_entry_id,
+                'number': str(next_number),
+                'xstream': xstream_ch,
+                'xml': best_match
+            }
+            program_list.append(entry)
+            next_entry_id += 1
             matches += 1
+            next_number += 1
     
     return jsonify({
         'success': True,
-        'matches': matches,
-        'mappings': mappings
+        'matches': matches
     })
-
-@app.route('/api/export/<format>')
-def export_mappings(format):
-    if not mappings:
-        return jsonify({'error': 'Keine Zuordnungen vorhanden'}), 400
-    
-    if format == 'txt':
-        output = io.StringIO()
-        output.write("# IPTV EPG Mapping\n")
-        output.write("# Format: XStream_Stream_ID | XStream_Name | XML_EPG_ID | XML_Name\n\n")
-        
-        for stream_id, xml_id in mappings.items():
-            xstream_ch = next((x for x in xstream_channels if x['stream_id'] == stream_id), None)
-            xml_ch = next((x for x in xml_channels if x['id'] == xml_id), None)
-            
-            if xstream_ch and xml_ch:
-                output.write(f"{stream_id} | {xstream_ch['name']} | {xml_id} | {xml_ch['name']}\n")
-        
-        return send_file(
-            io.BytesIO(output.getvalue().encode('utf-8')),
-            mimetype='text/plain',
-            as_attachment=True,
-            download_name='epg_mapping.txt'
-        )
-    
-    elif format == 'json':
-        export_data = []
-        for stream_id, xml_id in mappings.items():
-            xstream_ch = next((x for x in xstream_channels if x['stream_id'] == stream_id), None)
-            xml_ch = next((x for x in xml_channels if x['id'] == xml_id), None)
-            
-            if xstream_ch and xml_ch:
-                export_data.append({
-                    'xstream_stream_id': stream_id,
-                    'xstream_name': xstream_ch['name'],
-                    'xstream_epg_id': xstream_ch['epg_channel_id'],
-                    'xml_epg_id': xml_id,
-                    'xml_name': xml_ch['name']
-                })
-        
-        return send_file(
-            io.BytesIO(json.dumps(export_data, indent=2, ensure_ascii=False).encode('utf-8')),
-            mimetype='application/json',
-            as_attachment=True,
-            download_name='epg_mapping.json'
-        )
-    
-    elif format == 'csv':
-        output = io.StringIO()
-        output.write("XStream_Stream_ID;XStream_Name;XStream_EPG_ID;XML_EPG_ID;XML_Name\n")
-        
-        for stream_id, xml_id in mappings.items():
-            xstream_ch = next((x for x in xstream_channels if x['stream_id'] == stream_id), None)
-            xml_ch = next((x for x in xml_channels if x['id'] == xml_id), None)
-            
-            if xstream_ch and xml_ch:
-                output.write(f"{stream_id};{xstream_ch['name']};{xstream_ch['epg_channel_id']};{xml_id};{xml_ch['name']}\n")
-        
-        return send_file(
-            io.BytesIO(output.getvalue().encode('utf-8')),
-            mimetype='text/csv',
-            as_attachment=True,
-            download_name='epg_mapping.csv'
-        )
-    
-    return jsonify({'error': 'Unbekanntes Format'}), 400
 
 if __name__ == '__main__':
     # Config nur für Server-Start laden

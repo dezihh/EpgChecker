@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IPTV EPG Mapper</title>
+    <title>IPTV EPG Checker</title>
     <style>
         * {
             margin: 0;
@@ -72,13 +72,14 @@
         
         input[type="text"],
         input[type="password"],
-        input[type="file"] {
+        input[type="file"],
+        input[type="number"] {
             padding: 10px 15px;
             border: 2px solid #e0e0e0;
             border-radius: 8px;
             font-size: 1em;
             flex: 1;
-            min-width: 200px;
+            min-width: 80px;
         }
         
         input:focus {
@@ -121,6 +122,11 @@
             background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
         }
         
+        .btn-small {
+            padding: 5px 10px;
+            font-size: 0.9em;
+        }
+        
         .channels-container {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -156,6 +162,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
+            gap: 10px;
         }
         
         .channel-item:hover {
@@ -167,26 +174,30 @@
             border-left: 4px solid #667eea;
         }
         
-        .channel-item.mapped {
-            background: #e8f5e9;
-            border-left: 4px solid #4caf50;
+        .channel-info {
+            flex: 1;
         }
         
         .channel-name {
             font-weight: 500;
-            flex: 1;
         }
         
         .channel-id {
             font-size: 0.85em;
             color: #666;
-            margin-left: 10px;
+            margin-top: 3px;
         }
         
-        .mapped-info {
-            font-size: 0.8em;
-            color: #4caf50;
-            margin-top: 3px;
+        .channel-actions {
+            display: flex;
+            gap: 5px;
+            align-items: center;
+        }
+        
+        .number-input {
+            width: 70px;
+            padding: 5px 8px;
+            font-size: 0.9em;
         }
         
         .controls {
@@ -244,6 +255,117 @@
             margin-top: 5px;
         }
         
+        /* Modal styles */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 30px auto;
+            padding: 20px;
+            border-radius: 15px;
+            width: 95%;
+            max-width: 1000px;
+            max-height: 85vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+        
+        .modal-title {
+            font-size: 1.5em;
+            color: #667eea;
+            font-weight: 600;
+        }
+        
+        .close {
+            color: #aaa;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        
+        .close:hover {
+            color: #000;
+        }
+        
+        .detail-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .detail-table td {
+            padding: 10px;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .detail-table td:first-child {
+            font-weight: 600;
+            width: 30%;
+            color: #667eea;
+        }
+        
+        .program-list-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 0.9em;
+        }
+        
+        .program-list-table th,
+        .program-list-table td {
+            padding: 8px 10px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        
+        .program-list-table th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+        
+        .program-list-table tr:hover {
+            background: #f8f9fa;
+        }
+        
+        /* Visual grouping for entries with same number */
+        .program-list-table tr.number-group-start {
+            border-top: 3px solid #667eea;
+        }
+        
+        .program-list-table tr.number-group-start td:first-child {
+            font-weight: 700;
+            color: #667eea;
+            background: #f0f3ff;
+        }
+        
+        .program-list-table tr.number-group-member td:first-child {
+            background: #f0f3ff;
+            border-right: 2px solid #667eea;
+        }
+        
         @media (max-width: 1024px) {
             .channels-container {
                 grid-template-columns: 1fr;
@@ -254,8 +376,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎬 IPTV EPG Mapper</h1>
-            <p class="subtitle">Ordne deine IPTV-Sender den EPG-Daten zu</p>
+            <h1>🎬 IPTV EPG Checker</h1>
+            <p class="subtitle">EPG Daten vergleichen und Programmliste erstellen</p>
         </div>
         
         <div class="content">
@@ -312,8 +434,8 @@
                     <div class="stat-label">XML Sender</div>
                 </div>
                 <div class="stat-card">
-                    <div class="stat-number" id="mapping-count">0</div>
-                    <div class="stat-label">Zuordnungen</div>
+                    <div class="stat-number" id="program-list-count">0</div>
+                    <div class="stat-label">Programmliste Einträge</div>
                 </div>
             </div>
             
@@ -322,6 +444,7 @@
                 <div class="input-group">
                     <input type="text" id="search" placeholder="🔍 Sender suchen..." oninput="loadChannels()">
                     <button class="btn-success" onclick="autoMatch()">✨ Auto-Match</button>
+                    <button class="btn-secondary" onclick="showProgramList()">📋 Programmliste anzeigen</button>
                 </div>
             </div>
             
@@ -338,24 +461,30 @@
                 </div>
             </div>
             
-            <!-- Controls -->
-            <div class="controls">
-                <button onclick="mapChannels()">➡ Zuordnen</button>
-                <button onclick="unmapChannel()">⬅ Zuordnung entfernen</button>
-            </div>
-            
-            <!-- Export -->
-            <div class="section">
-                <div class="section-title">💾 Export</div>
-                <div class="controls">
-                    <button onclick="exportMapping('txt')">Export als TXT</button>
-                    <button onclick="exportMapping('json')">Export als JSON</button>
-                    <button onclick="exportMapping('csv')">Export als CSV</button>
-                </div>
-            </div>
-            
             <!-- Status Bar -->
             <div class="status-bar" id="status">Bereit</div>
+        </div>
+    </div>
+    
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <div class="modal-title" id="detailModalTitle">Channel Details</div>
+                <span class="close" onclick="closeDetailModal()">&times;</span>
+            </div>
+            <div id="detailModalContent"></div>
+        </div>
+    </div>
+    
+    <!-- Program List Modal -->
+    <div id="programListModal" class="modal">
+        <div class="modal-content" style="max-width: 1200px;">
+            <div class="modal-header">
+                <div class="modal-title">Programmliste</div>
+                <span class="close" onclick="closeProgramListModal()">&times;</span>
+            </div>
+            <div id="programListContent"></div>
         </div>
     </div>
     
@@ -368,6 +497,17 @@
         let currentXStreamPage = 1;
         let currentXMLPage = 1;
         let appConfig = {};
+        
+        // HTML escape function to prevent XSS
+        function escapeHtml(unsafe) {
+            if (unsafe == null || unsafe === undefined) return '';
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
         
         function setStatus(message, type = '') {
             const status = document.getElementById('status');
@@ -399,36 +539,30 @@
                     const xstreamUrlField = document.getElementById('xstream-url');
                     if (xstreamUrlField) {
                         xstreamUrlField.value = appConfig.xstream.url;
-                        console.log('Set xstream URL:', appConfig.xstream.url);
                     }
                 }
                 if (appConfig.xstream && appConfig.xstream.username) {
                     const xstreamUserField = document.getElementById('xstream-user');
                     if (xstreamUserField) {
                         xstreamUserField.value = appConfig.xstream.username;
-                        console.log('Set xstream username:', appConfig.xstream.username);
                     }
                 }
                 if (appConfig.xstream && appConfig.xstream.password) {
                     const xstreamPassField = document.getElementById('xstream-pass');
                     if (xstreamPassField) {
                         xstreamPassField.value = appConfig.xstream.password;
-                        console.log('Set xstream password: ***');
                     }
                 }
                 if (appConfig.xml_epg && appConfig.xml_epg.url) {
                     const xmlUrlField = document.getElementById('xml-url');
                     if (xmlUrlField) {
                         xmlUrlField.value = appConfig.xml_epg.url;
-                        console.log('Set XML URL:', appConfig.xml_epg.url);
                     }
                 }
                 
-                // History Dropdowns erstellen
                 setupHistoryDropdowns();
             } catch (error) {
                 console.error('Fehler beim Laden der Config:', error);
-                // Nicht kritisch - App funktioniert auch ohne Config
             }
         }
         
@@ -440,8 +574,6 @@
             
             // XStream History Setup
             if (appConfig.history && appConfig.history.xstream_urls && appConfig.history.xstream_urls.length > 0) {
-                console.log('XStream History:', appConfig.history.xstream_urls);
-                
                 xstreamUrlInput.addEventListener('focus', () => {
                     xstreamSelect.innerHTML = '';
                     appConfig.history.xstream_urls.forEach(url => {
@@ -458,43 +590,13 @@
                     xstreamSelect.style.display = 'block';
                 });
                 
-                xstreamUrlInput.addEventListener('input', () => {
-                    const searchTerm = xstreamUrlInput.value.toLowerCase();
-                    xstreamSelect.innerHTML = '';
-                    
-                    const filtered = appConfig.history.xstream_urls.filter(url => 
-                        url.toLowerCase().includes(searchTerm)
-                    );
-                    
-                    if (filtered.length > 0) {
-                        filtered.forEach(url => {
-                            const option = document.createElement('option');
-                            option.value = url;
-                            option.textContent = url;
-                            option.style.cssText = 'padding: 8px; cursor: pointer;';
-                            option.onclick = () => {
-                                xstreamUrlInput.value = url;
-                                xstreamSelect.style.display = 'none';
-                            };
-                            xstreamSelect.appendChild(option);
-                        });
-                        xstreamSelect.style.display = 'block';
-                    } else {
-                        xstreamSelect.style.display = 'none';
-                    }
-                });
-                
                 xstreamUrlInput.addEventListener('blur', () => {
                     setTimeout(() => xstreamSelect.style.display = 'none', 200);
                 });
-            } else {
-                console.log('No XStream history available');
             }
             
             // XML History Setup
             if (appConfig.history && appConfig.history.xml_urls && appConfig.history.xml_urls.length > 0) {
-                console.log('XML History:', appConfig.history.xml_urls);
-                
                 xmlUrlInput.addEventListener('focus', () => {
                     xmlSelect.innerHTML = '';
                     appConfig.history.xml_urls.forEach(url => {
@@ -511,37 +613,9 @@
                     xmlSelect.style.display = 'block';
                 });
                 
-                xmlUrlInput.addEventListener('input', () => {
-                    const searchTerm = xmlUrlInput.value.toLowerCase();
-                    xmlSelect.innerHTML = '';
-                    
-                    const filtered = appConfig.history.xml_urls.filter(url => 
-                        url.toLowerCase().includes(searchTerm)
-                    );
-                    
-                    if (filtered.length > 0) {
-                        filtered.forEach(url => {
-                            const option = document.createElement('option');
-                            option.value = url;
-                            option.textContent = url;
-                            option.style.cssText = 'padding: 8px; cursor: pointer;';
-                            option.onclick = () => {
-                                xmlUrlInput.value = url;
-                                xmlSelect.style.display = 'none';
-                            };
-                            xmlSelect.appendChild(option);
-                        });
-                        xmlSelect.style.display = 'block';
-                    } else {
-                        xmlSelect.style.display = 'none';
-                    }
-                });
-                
                 xmlUrlInput.addEventListener('blur', () => {
                     setTimeout(() => xmlSelect.style.display = 'none', 200);
                 });
-            } else {
-                console.log('No XML history available');
             }
         }
         
@@ -601,8 +675,6 @@
             
             try {
                 setStatus('Lade XML von URL...', '');
-                
-                // Zur History hinzufügen
                 await addToHistory('xml', url);
                 
                 const response = await fetch('/api/load_xml_url', {
@@ -620,10 +692,7 @@
                 
                 setStatus(`XML von URL geladen: ${data.count} Sender`, 'success');
                 document.getElementById('xml-count').textContent = data.count;
-                
-                // Config neu laden um History zu aktualisieren
                 await loadConfig();
-                
                 loadChannels();
             } catch (error) {
                 setStatus('Fehler beim Laden: ' + error.message, 'error');
@@ -642,8 +711,6 @@
             
             try {
                 setStatus('Lade XStream Daten...', '');
-                
-                // Zur History hinzufügen
                 await addToHistory('xstream', url);
                 
                 const response = await fetch('/api/load_xstream', {
@@ -661,10 +728,7 @@
                 
                 setStatus(`XStream geladen: ${data.count} Sender`, 'success');
                 document.getElementById('xstream-count').textContent = data.count;
-                
-                // Config neu laden um History zu aktualisieren
                 await loadConfig();
-                
                 loadChannels();
             } catch (error) {
                 setStatus('Fehler beim Laden: ' + error.message, 'error');
@@ -675,19 +739,10 @@
             const search = document.getElementById('search').value;
             
             try {
-                setStatus('Lade Kanäle...', '');
                 const response = await fetch(`/api/get_channels?search=${encodeURIComponent(search)}`);
                 
                 if (!response.ok) {
                     throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                }
-                
-                const contentType = response.headers.get('content-type');
-                if (!contentType || !contentType.includes('application/json')) {
-                    const text = await response.text();
-                    console.error('Response is not JSON:', text.substring(0, 500));
-                    setStatus('Fehler: Server antwortet nicht mit JSON', 'error');
-                    return;
                 }
                 
                 const data = await response.json();
@@ -706,7 +761,6 @@
                 renderXStreamList();
                 renderXMLList();
                 
-                document.getElementById('mapping-count').textContent = Object.keys(data.mappings || {}).length;
                 setStatus('Bereit', '');
             } catch (error) {
                 console.error('Fehler beim Laden:', error);
@@ -722,7 +776,6 @@
             
             list.innerHTML = '';
             
-            // Pagination Info
             const totalPages = Math.ceil(allXStreamChannels.length / ITEMS_PER_PAGE);
             if (totalPages > 1) {
                 const paginationInfo = document.createElement('div');
@@ -737,19 +790,24 @@
             
             pageChannels.forEach(ch => {
                 const item = document.createElement('div');
-                item.className = 'channel-item' + (ch.mapped_to ? ' mapped' : '');
-                item.onclick = () => selectXStream(ch.stream_id);
+                item.className = 'channel-item';
+                item.dataset.streamId = ch.stream_id;
                 
-                const content = `
-                    <div>
-                        <div class="channel-name">${ch.name}</div>
-                        ${ch.epg_channel_id ? `<div class="channel-id">EPG: ${ch.epg_channel_id}</div>` : ''}
-                        ${ch.mapped_name ? `<div class="mapped-info">→ ${ch.mapped_name}</div>` : ''}
+                // Store raw ID for onclick handlers (don't escape)
+                const rawStreamId = ch.stream_id;
+                
+                item.innerHTML = `
+                    <div class="channel-info" onclick="selectXStream('${rawStreamId}')">
+                        <div class="channel-name">${escapeHtml(ch.name)}</div>
+                        ${ch.epg_channel_id ? `<div class="channel-id">EPG: ${escapeHtml(ch.epg_channel_id)}</div>` : ''}
+                    </div>
+                    <div class="channel-actions">
+                        <input type="number" class="number-input" placeholder="Nr." id="num-${rawStreamId}" min="1" step="1" onclick="event.stopPropagation()">
+                        <button class="btn-small" onclick="addToProgramList('${rawStreamId}', null); event.stopPropagation();">➕</button>
+                        <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${rawStreamId}'); event.stopPropagation();">ℹ️</button>
                     </div>
                 `;
                 
-                item.innerHTML = content;
-                item.dataset.streamId = ch.stream_id;
                 list.appendChild(item);
             });
         }
@@ -762,7 +820,6 @@
             
             list.innerHTML = '';
             
-            // Pagination Info
             const totalPages = Math.ceil(allXMLChannels.length / ITEMS_PER_PAGE);
             if (totalPages > 1) {
                 const paginationInfo = document.createElement('div');
@@ -778,17 +835,23 @@
             pageChannels.forEach(ch => {
                 const item = document.createElement('div');
                 item.className = 'channel-item';
-                item.onclick = () => selectXML(ch.id);
+                item.dataset.xmlId = ch.id;
                 
-                const content = `
-                    <div>
-                        <div class="channel-name">${ch.name}</div>
-                        <div class="channel-id">${ch.id}</div>
+                // Store raw ID for onclick handlers (don't escape)
+                const rawXmlId = ch.id;
+                
+                item.innerHTML = `
+                    <div class="channel-info" onclick="selectXML('${rawXmlId}')">
+                        <div class="channel-name">${escapeHtml(ch.name)}</div>
+                        <div class="channel-id">${escapeHtml(ch.id)}</div>
+                    </div>
+                    <div class="channel-actions">
+                        <input type="number" class="number-input" placeholder="Nr." id="xml-num-${rawXmlId}" min="1" step="1" onclick="event.stopPropagation()">
+                        <button class="btn-small" onclick="addToProgramList(null, '${rawXmlId}'); event.stopPropagation();">➕</button>
+                        <button class="btn-small btn-secondary" onclick="showDetails('xml', '${rawXmlId}'); event.stopPropagation();">ℹ️</button>
                     </div>
                 `;
                 
-                item.innerHTML = content;
-                item.dataset.xmlId = ch.id;
                 list.appendChild(item);
             });
         }
@@ -829,58 +892,183 @@
             }
         }
         
-        async function mapChannels() {
-            if (!selectedXStream || !selectedXML) {
-                setStatus('Bitte je einen Sender auswählen', 'error');
+        async function addToProgramList(streamId, xmlId) {
+            let number = null;
+            
+            if (streamId) {
+                const numInput = document.getElementById(`num-${streamId}`);
+                number = numInput ? numInput.value : null;
+            } else if (xmlId) {
+                const numInput = document.getElementById(`xml-num-${xmlId}`);
+                number = numInput ? numInput.value : null;
+            }
+            
+            if (!number) {
+                setStatus('Bitte eine Nummer eingeben', 'error');
                 return;
             }
             
             try {
-                const response = await fetch('/api/map', {
+                const response = await fetch('/api/add_to_program_list', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
-                        stream_id: selectedXStream,
-                        xml_id: selectedXML
+                        number: number,
+                        stream_id: streamId,
+                        xml_id: xmlId
                     })
                 });
                 
                 const data = await response.json();
                 
-                if (data.success) {
-                    setStatus('Zuordnung erstellt', 'success');
-                    loadChannels();
-                    selectedXStream = null;
-                    selectedXML = null;
+                if (data.error) {
+                    setStatus('Fehler: ' + data.error, 'error');
+                    return;
+                }
+                
+                setStatus('Zur Programmliste hinzugefügt', 'success');
+                updateProgramListCount();
+                
+                // Clear the number input
+                if (streamId) {
+                    const numInput = document.getElementById(`num-${streamId}`);
+                    if (numInput) numInput.value = '';
+                } else if (xmlId) {
+                    const numInput = document.getElementById(`xml-num-${xmlId}`);
+                    if (numInput) numInput.value = '';
                 }
             } catch (error) {
-                setStatus('Fehler beim Zuordnen: ' + error.message, 'error');
+                setStatus('Fehler: ' + error.message, 'error');
             }
         }
         
-        async function unmapChannel() {
-            if (!selectedXStream) {
-                setStatus('Bitte einen XStream-Sender auswählen', 'error');
+        async function updateProgramListCount() {
+            try {
+                const response = await fetch('/api/get_program_list');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('program-list-count').textContent = data.program_list.length;
+                }
+            } catch (error) {
+                console.error('Fehler beim Aktualisieren der Programmlistenzählung:', error);
+            }
+        }
+        
+        async function showProgramList() {
+            try {
+                const response = await fetch('/api/get_program_list');
+                const data = await response.json();
+                
+                if (data.error) {
+                    setStatus('Fehler: ' + data.error, 'error');
+                    return;
+                }
+                
+                if (data.program_list.length === 0) {
+                    setStatus('Programmliste ist leer', 'error');
+                    return;
+                }
+                
+                let html = '<table class="program-list-table">';
+                html += '<thead><tr>';
+                html += '<th>Nummer</th>';
+                html += '<th>XStream Sendername</th>';
+                html += '<th>XStream EPG ID</th>';
+                html += '<th>XML Sendername</th>';
+                html += '<th>XML EPG ID</th>';
+                html += '<th>XML Dateiname</th>';
+                html += '<th>Aktionen</th>';
+                html += '</tr></thead><tbody>';
+                
+                let lastNumber = null;
+                data.program_list.forEach((entry, index) => {
+                    const isNewGroup = entry.number !== lastNumber;
+                    const groupClass = isNewGroup ? 'number-group-start' : 'number-group-member';
+                    
+                    html += `<tr class="${groupClass}">`;
+                    html += `<td>${escapeHtml(entry.number)}</td>`;
+                    html += `<td>${escapeHtml(entry.xstream_name)}</td>`;
+                    html += `<td>${escapeHtml(entry.xstream_epg_id)}</td>`;
+                    html += `<td>${escapeHtml(entry.xml_name)}</td>`;
+                    html += `<td>${escapeHtml(entry.xml_epg_id)}</td>`;
+                    html += `<td>${escapeHtml(entry.xml_filename)}</td>`;
+                    html += `<td><button class="btn-small btn-secondary" onclick="deleteFromProgramList(${entry.id}); event.stopPropagation();" title="Löschen">🗑️</button></td>`;
+                    html += '</tr>';
+                    
+                    lastNumber = entry.number;
+                });
+                
+                html += '</tbody></table>';
+                
+                document.getElementById('programListContent').innerHTML = html;
+                document.getElementById('programListModal').style.display = 'block';
+            } catch (error) {
+                setStatus('Fehler: ' + error.message, 'error');
+            }
+        }
+        
+        function closeProgramListModal() {
+            document.getElementById('programListModal').style.display = 'none';
+        }
+        
+        async function deleteFromProgramList(entryId) {
+            if (!confirm(`Möchten Sie diesen Eintrag wirklich löschen?`)) {
                 return;
             }
             
             try {
-                const response = await fetch('/api/unmap', {
+                const response = await fetch('/api/remove_from_program_list', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({stream_id: selectedXStream})
+                    body: JSON.stringify({id: entryId})
                 });
                 
                 const data = await response.json();
                 
                 if (data.success) {
-                    setStatus('Zuordnung entfernt', 'success');
-                    loadChannels();
-                    selectedXStream = null;
+                    setStatus('Eintrag gelöscht', 'success');
+                    updateProgramListCount();
+                    // Refresh the program list display
+                    showProgramList();
+                } else {
+                    setStatus('Fehler beim Löschen', 'error');
                 }
             } catch (error) {
                 setStatus('Fehler: ' + error.message, 'error');
             }
+        }
+        
+        function showDetails(type, id) {
+            let channel;
+            let title;
+            
+            if (type === 'xstream') {
+                channel = allXStreamChannels.find(ch => String(ch.stream_id) === String(id));
+                title = 'XStream Channel Details (Raw Data)';
+            } else {
+                channel = allXMLChannels.find(ch => String(ch.id) === String(id));
+                title = 'XML EPG Channel Details (Raw Data)';
+            }
+            
+            if (!channel) {
+                setStatus('Kanal nicht gefunden', 'error');
+                return;
+            }
+            
+            document.getElementById('detailModalTitle').textContent = title;
+            
+            // Display raw JSON data in a readable format
+            let html = '<div style="max-height: 500px; overflow-y: auto;"><pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word;">';
+            html += escapeHtml(JSON.stringify(channel, null, 2));
+            html += '</pre></div>';
+            
+            document.getElementById('detailModalContent').innerHTML = html;
+            document.getElementById('detailModal').style.display = 'block';
+        }
+        
+        function closeDetailModal() {
+            document.getElementById('detailModal').style.display = 'none';
         }
         
         async function autoMatch() {
@@ -890,20 +1078,27 @@
                 const data = await response.json();
                 
                 if (data.success) {
-                    setStatus(`Auto-Match: ${data.matches} Zuordnungen gefunden`, 'success');
-                    loadChannels();
+                    setStatus(`Auto-Match: ${data.matches} Zuordnungen zur Programmliste hinzugefügt`, 'success');
+                    updateProgramListCount();
                 }
             } catch (error) {
                 setStatus('Fehler beim Auto-Match: ' + error.message, 'error');
             }
         }
         
-        function exportMapping(format) {
-            window.location.href = `/api/export/${format}`;
-            setStatus(`Export als ${format.toUpperCase()} gestartet`, 'success');
+        // Close modals on outside click
+        window.onclick = function(event) {
+            const detailModal = document.getElementById('detailModal');
+            const programListModal = document.getElementById('programListModal');
+            if (event.target == detailModal) {
+                closeDetailModal();
+            }
+            if (event.target == programListModal) {
+                closeProgramListModal();
+            }
         }
         
-        // Initial load - nur Config laden, keine Channels
+        // Initial load
         loadConfig();
     </script>
 </body>
