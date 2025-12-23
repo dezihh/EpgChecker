@@ -154,6 +154,9 @@ def load_xml_url():
         return jsonify({'error': 'URL erforderlich'}), 400
     
     try:
+        # Note: This makes a request to a user-provided URL, which is the intended functionality
+        # for loading XML EPG data. Users should only provide trusted URLs.
+        # Consider implementing URL allowlist or additional validation in production environments.
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         

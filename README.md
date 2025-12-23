@@ -151,6 +151,13 @@ Die Konfiguration wird in `config.json` gespeichert und enthält:
 - **xml_epg**: Standard XML EPG URL
 - **history**: Liste der zuletzt verwendeten URLs (max. 10 Einträge)
 
+## Sicherheitshinweise
+
+- Die Anwendung lädt Daten von benutzerdefinierten URLs (XStream API und XML EPG)
+- **Verwenden Sie nur vertrauenswürdige URLs** von bekannten Quellen
+- Die Anwendung ist für den Einsatz in lokalen Netzwerken oder vertrauenswürdigen Umgebungen konzipiert
+- Für den produktiven Einsatz in öffentlichen Netzwerken sollten zusätzliche Sicherheitsmaßnahmen implementiert werden (z.B. URL-Allowlist, Authentifizierung)
+
 ## Fehlerbehebung
 
 ### XStream lädt nicht
