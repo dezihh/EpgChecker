@@ -771,15 +771,18 @@
                 item.className = 'channel-item';
                 item.dataset.streamId = ch.stream_id;
                 
+                // Store raw ID for onclick handlers (don't escape)
+                const rawStreamId = ch.stream_id;
+                
                 item.innerHTML = `
-                    <div class="channel-info" onclick="selectXStream('${escapeHtml(ch.stream_id)}')">
+                    <div class="channel-info" onclick="selectXStream('${rawStreamId}')">
                         <div class="channel-name">${escapeHtml(ch.name)}</div>
                         ${ch.epg_channel_id ? `<div class="channel-id">EPG: ${escapeHtml(ch.epg_channel_id)}</div>` : ''}
                     </div>
                     <div class="channel-actions">
-                        <input type="number" class="number-input" placeholder="Nr." id="num-${escapeHtml(ch.stream_id)}" min="1" step="1" onclick="event.stopPropagation()">
-                        <button class="btn-small" onclick="addToProgramList('${escapeHtml(ch.stream_id)}', null); event.stopPropagation();">➕</button>
-                        <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${escapeHtml(ch.stream_id)}'); event.stopPropagation();">ℹ️</button>
+                        <input type="number" class="number-input" placeholder="Nr." id="num-${rawStreamId}" min="1" step="1" onclick="event.stopPropagation()">
+                        <button class="btn-small" onclick="addToProgramList('${rawStreamId}', null); event.stopPropagation();">➕</button>
+                        <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${rawStreamId}'); event.stopPropagation();">ℹ️</button>
                     </div>
                 `;
                 
@@ -812,15 +815,18 @@
                 item.className = 'channel-item';
                 item.dataset.xmlId = ch.id;
                 
+                // Store raw ID for onclick handlers (don't escape)
+                const rawXmlId = ch.id;
+                
                 item.innerHTML = `
-                    <div class="channel-info" onclick="selectXML('${escapeHtml(ch.id)}')">
+                    <div class="channel-info" onclick="selectXML('${rawXmlId}')">
                         <div class="channel-name">${escapeHtml(ch.name)}</div>
                         <div class="channel-id">${escapeHtml(ch.id)}</div>
                     </div>
                     <div class="channel-actions">
-                        <input type="number" class="number-input" placeholder="Nr." id="xml-num-${escapeHtml(ch.id)}" min="1" step="1" onclick="event.stopPropagation()">
-                        <button class="btn-small" onclick="addToProgramList(null, '${escapeHtml(ch.id)}'); event.stopPropagation();">➕</button>
-                        <button class="btn-small btn-secondary" onclick="showDetails('xml', '${escapeHtml(ch.id)}'); event.stopPropagation();">ℹ️</button>
+                        <input type="number" class="number-input" placeholder="Nr." id="xml-num-${rawXmlId}" min="1" step="1" onclick="event.stopPropagation()">
+                        <button class="btn-small" onclick="addToProgramList(null, '${rawXmlId}'); event.stopPropagation();">➕</button>
+                        <button class="btn-small btn-secondary" onclick="showDetails('xml', '${rawXmlId}'); event.stopPropagation();">ℹ️</button>
                     </div>
                 `;
                 
@@ -950,6 +956,7 @@
                 html += '<th>XML Sendername</th>';
                 html += '<th>XML EPG ID</th>';
                 html += '<th>XML Dateiname</th>';
+                html += '<th>Aktionen</th>';
                 html += '</tr></thead><tbody>';
                 
                 data.program_list.forEach(entry => {
@@ -960,6 +967,7 @@
                     html += `<td>${escapeHtml(entry.xml_name)}</td>`;
                     html += `<td>${escapeHtml(entry.xml_epg_id)}</td>`;
                     html += `<td>${escapeHtml(entry.xml_filename)}</td>`;
+                    html += `<td><button class="btn-small btn-secondary" onclick="deleteFromProgramList('${entry.number}'); event.stopPropagation();" title="Löschen">🗑️</button></td>`;
                     html += '</tr>';
                 });
                 
@@ -976,16 +984,43 @@
             document.getElementById('programListModal').style.display = 'none';
         }
         
+        async function deleteFromProgramList(number) {
+            if (!confirm(`Möchten Sie Eintrag Nr. ${number} wirklich löschen?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/remove_from_program_list', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({number: number})
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    setStatus('Eintrag gelöscht', 'success');
+                    updateProgramListCount();
+                    // Refresh the program list display
+                    showProgramList();
+                } else {
+                    setStatus('Fehler beim Löschen', 'error');
+                }
+            } catch (error) {
+                setStatus('Fehler: ' + error.message, 'error');
+            }
+        }
+        
         function showDetails(type, id) {
             let channel;
             let title;
             
             if (type === 'xstream') {
-                channel = allXStreamChannels.find(ch => ch.stream_id === id);
-                title = 'XStream Channel Details';
+                channel = allXStreamChannels.find(ch => String(ch.stream_id) === String(id));
+                title = 'XStream Channel Details (Raw Data)';
             } else {
-                channel = allXMLChannels.find(ch => ch.id === id);
-                title = 'XML EPG Channel Details';
+                channel = allXMLChannels.find(ch => String(ch.id) === String(id));
+                title = 'XML EPG Channel Details (Raw Data)';
             }
             
             if (!channel) {
@@ -995,13 +1030,10 @@
             
             document.getElementById('detailModalTitle').textContent = title;
             
-            let html = '<table class="detail-table">';
-            
-            Object.entries(channel).forEach(([key, value]) => {
-                html += `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(value) || '-'}</td></tr>`;
-            });
-            
-            html += '</table>';
+            // Display raw JSON data in a readable format
+            let html = '<div style="max-height: 500px; overflow-y: auto;"><pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word;">';
+            html += escapeHtml(JSON.stringify(channel, null, 2));
+            html += '</pre></div>';
             
             document.getElementById('detailModalContent').innerHTML = html;
             document.getElementById('detailModal').style.display = 'block';

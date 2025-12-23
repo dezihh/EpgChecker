@@ -277,12 +277,8 @@ def load_xstream():
         
         xstream_channels = []
         for ch in data:
-            xstream_channels.append({
-                'stream_id': ch.get('stream_id', ''),
-                'name': ch.get('name', ''),
-                'epg_channel_id': ch.get('epg_channel_id', ''),
-                'category_id': ch.get('category_id', '')
-            })
+            # Store the complete raw channel data
+            xstream_channels.append(ch)
         
         return jsonify({
             'success': True,
