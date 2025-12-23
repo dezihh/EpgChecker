@@ -4,9 +4,34 @@ import requests
 import json
 import io
 import gzip
+import os
 from difflib import SequenceMatcher
 
 app = Flask(__name__)
+
+# Config laden
+CONFIG_FILE = 'config.json'
+
+def load_config():
+    if os.path.exists(CONFIG_FILE):
+        with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
+            return json.load(f)
+    else:
+        # Default Config
+        default_config = {
+            "server": {"host": "0.0.0.0", "port": 8081},
+            "xstream": {"url": "", "username": "", "password": ""},
+            "xml_epg": {"url": ""},
+            "history": {"xstream_urls": [], "xml_urls": [], "max_history": 10}
+        }
+        save_config(default_config)
+        return default_config
+
+def save_config(config):
+    with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
+        json.dump(config, f, indent=2, ensure_ascii=False)
+
+config = load_config()
 
 # In-Memory Storage
 xml_channels = []
@@ -16,6 +41,47 @@ mappings = {}
 @app.route('/')
 def index():
     return render_template('index.html')
+
+@app.route('/api/config', methods=['GET'])
+def get_config():
+    return jsonify(config)
+
+@app.route('/api/add_history', methods=['POST'])
+def add_history():
+    global config
+    data = request.json
+    history_type = data.get('type')  # 'xstream' or 'xml'
+    url = data.get('url', '').strip()
+    
+    if not url:
+        return jsonify({'success': False}), 400
+    
+    if history_type == 'xstream':
+        history_list = config['history']['xstream_urls']
+    elif history_type == 'xml':
+        history_list = config['history']['xml_urls']
+    else:
+        return jsonify({'success': False}), 400
+    
+    # Entferne URL falls bereits vorhanden
+    if url in history_list:
+        history_list.remove(url)
+    
+    # Füge am Anfang hinzu
+    history_list.insert(0, url)
+    
+    # Begrenze History
+    max_history = config['history']['max_history']
+    if len(history_list) > max_history:
+        history_list = history_list[:max_history]
+    
+    if history_type == 'xstream':
+        config['history']['xstream_urls'] = history_list
+    else:
+        config['history']['xml_urls'] = history_list
+    
+    save_config(config)
+    return jsonify({'success': True})
 
 @app.route('/api/upload_xml', methods=['POST'])
 def upload_xml():
@@ -27,7 +93,20 @@ def upload_xml():
     file = request.files['file']
     
     try:
-        content = file.read().decode('utf-8')
+        # Prüfe ob Datei komprimiert ist
+        file_content = file.read()
+        
+        # Versuche GZ zu entpacken
+        if file.filename.endswith('.gz') or file_content[:2] == b'\x1f\x8b':
+            try:
+                content = gzip.decompress(file_content).decode('utf-8')
+                app.logger.info("File decompressed from GZ format")
+            except Exception as e:
+                app.logger.error(f"GZ decompression failed: {str(e)}")
+                return jsonify({'error': f'Fehler beim Entpacken der GZ-Datei: {str(e)}'}), 500
+        else:
+            content = file_content.decode('utf-8')
+        
         root = ET.fromstring(content)
         
         xml_channels = []
@@ -64,7 +143,21 @@ def load_xml_url():
         response = requests.get(url, timeout=30)
         response.raise_for_status()
         
-        content = response.content.decode('utf-8')
+        # Prüfe ob Content GZ-komprimiert ist
+        content_encoding = response.headers.get('content-encoding', '').lower()
+        content_type = response.headers.get('content-type', '').lower()
+        
+        # Automatische GZ-Erkennung
+        if content_encoding == 'gzip' or url.endswith('.gz') or response.content[:2] == b'\x1f\x8b':
+            try:
+                content = gzip.decompress(response.content).decode('utf-8')
+                app.logger.info("URL content decompressed from GZ format")
+            except Exception as e:
+                app.logger.error(f"GZ decompression failed: {str(e)}")
+                return jsonify({'error': f'Fehler beim Entpacken der GZ-Datei: {str(e)}'}), 500
+        else:
+            content = response.content.decode('utf-8')
+        
         root = ET.fromstring(content)
         
         xml_channels = []
@@ -91,7 +184,11 @@ def load_xml_url():
 
 @app.route('/api/load_xstream', methods=['POST'])
 def load_xstream():
-    global xstream_channels
+    global xstream_channels, mappings
+    
+    # Lösche alte Daten und Mappings
+    xstream_channels = []
+    mappings = {}
     
     data = request.json
     url = data.get('url', '').strip().rstrip('/')
@@ -329,4 +426,6 @@ def export_mappings(format):
     return jsonify({'error': 'Unbekanntes Format'}), 400
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=8081, debug=True)
+    host = config['server']['host']
+    port = config['server']['port']
+    app.run(host=host, port=port, debug=True)
