@@ -38,7 +38,7 @@ def save_config(config):
 # In-Memory Storage
 xml_channels = []
 xstream_channels = []
-program_list = {}  # Format: {number: {'xstream': {...}, 'xml': {...} or None}}
+program_list = {}  # Format: {number: {'xstream': {...} or {}, 'xml': {...} or None}}
 
 @app.route('/')
 def index():

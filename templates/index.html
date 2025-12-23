@@ -476,6 +476,17 @@
         let currentXMLPage = 1;
         let appConfig = {};
         
+        // HTML escape function to prevent XSS
+        function escapeHtml(unsafe) {
+            if (unsafe == null || unsafe === undefined) return '';
+            return String(unsafe)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+        
         function setStatus(message, type = '') {
             const status = document.getElementById('status');
             status.textContent = message;
@@ -503,16 +514,28 @@
                 
                 // Felder mit Config vorausfüllen
                 if (appConfig.xstream && appConfig.xstream.url) {
-                    document.getElementById('xstream-url').value = appConfig.xstream.url;
+                    const xstreamUrlField = document.getElementById('xstream-url');
+                    if (xstreamUrlField) {
+                        xstreamUrlField.value = appConfig.xstream.url;
+                    }
                 }
                 if (appConfig.xstream && appConfig.xstream.username) {
-                    document.getElementById('xstream-user').value = appConfig.xstream.username;
+                    const xstreamUserField = document.getElementById('xstream-user');
+                    if (xstreamUserField) {
+                        xstreamUserField.value = appConfig.xstream.username;
+                    }
                 }
                 if (appConfig.xstream && appConfig.xstream.password) {
-                    document.getElementById('xstream-pass').value = appConfig.xstream.password;
+                    const xstreamPassField = document.getElementById('xstream-pass');
+                    if (xstreamPassField) {
+                        xstreamPassField.value = appConfig.xstream.password;
+                    }
                 }
                 if (appConfig.xml_epg && appConfig.xml_epg.url) {
-                    document.getElementById('xml-url').value = appConfig.xml_epg.url;
+                    const xmlUrlField = document.getElementById('xml-url');
+                    if (xmlUrlField) {
+                        xmlUrlField.value = appConfig.xml_epg.url;
+                    }
                 }
                 
                 setupHistoryDropdowns();
@@ -749,14 +772,14 @@
                 item.dataset.streamId = ch.stream_id;
                 
                 item.innerHTML = `
-                    <div class="channel-info" onclick="selectXStream('${ch.stream_id}')">
-                        <div class="channel-name">${ch.name}</div>
-                        ${ch.epg_channel_id ? `<div class="channel-id">EPG: ${ch.epg_channel_id}</div>` : ''}
+                    <div class="channel-info" onclick="selectXStream('${escapeHtml(ch.stream_id)}')">
+                        <div class="channel-name">${escapeHtml(ch.name)}</div>
+                        ${ch.epg_channel_id ? `<div class="channel-id">EPG: ${escapeHtml(ch.epg_channel_id)}</div>` : ''}
                     </div>
                     <div class="channel-actions">
-                        <input type="number" class="number-input" placeholder="Nr." id="num-${ch.stream_id}" min="1" onclick="event.stopPropagation()">
-                        <button class="btn-small" onclick="addToProgramList('${ch.stream_id}', null); event.stopPropagation();">➕</button>
-                        <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${ch.stream_id}'); event.stopPropagation();">ℹ️</button>
+                        <input type="number" class="number-input" placeholder="Nr." id="num-${escapeHtml(ch.stream_id)}" min="1" onclick="event.stopPropagation()">
+                        <button class="btn-small" onclick="addToProgramList('${escapeHtml(ch.stream_id)}', null); event.stopPropagation();">➕</button>
+                        <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${escapeHtml(ch.stream_id)}'); event.stopPropagation();">ℹ️</button>
                     </div>
                 `;
                 
@@ -790,14 +813,14 @@
                 item.dataset.xmlId = ch.id;
                 
                 item.innerHTML = `
-                    <div class="channel-info" onclick="selectXML('${ch.id}')">
-                        <div class="channel-name">${ch.name}</div>
-                        <div class="channel-id">${ch.id}</div>
+                    <div class="channel-info" onclick="selectXML('${escapeHtml(ch.id)}')">
+                        <div class="channel-name">${escapeHtml(ch.name)}</div>
+                        <div class="channel-id">${escapeHtml(ch.id)}</div>
                     </div>
                     <div class="channel-actions">
-                        <input type="number" class="number-input" placeholder="Nr." id="xml-num-${ch.id}" min="1" onclick="event.stopPropagation()">
-                        <button class="btn-small" onclick="addToProgramList(null, '${ch.id}'); event.stopPropagation();">➕</button>
-                        <button class="btn-small btn-secondary" onclick="showDetails('xml', '${ch.id}'); event.stopPropagation();">ℹ️</button>
+                        <input type="number" class="number-input" placeholder="Nr." id="xml-num-${escapeHtml(ch.id)}" min="1" onclick="event.stopPropagation()">
+                        <button class="btn-small" onclick="addToProgramList(null, '${escapeHtml(ch.id)}'); event.stopPropagation();">➕</button>
+                        <button class="btn-small btn-secondary" onclick="showDetails('xml', '${escapeHtml(ch.id)}'); event.stopPropagation();">ℹ️</button>
                     </div>
                 `;
                 
@@ -931,12 +954,12 @@
                 
                 data.program_list.forEach(entry => {
                     html += '<tr>';
-                    html += `<td>${entry.number}</td>`;
-                    html += `<td>${entry.xstream_name}</td>`;
-                    html += `<td>${entry.xstream_epg_id}</td>`;
-                    html += `<td>${entry.xml_name}</td>`;
-                    html += `<td>${entry.xml_epg_id}</td>`;
-                    html += `<td>${entry.xml_filename}</td>`;
+                    html += `<td>${escapeHtml(entry.number)}</td>`;
+                    html += `<td>${escapeHtml(entry.xstream_name)}</td>`;
+                    html += `<td>${escapeHtml(entry.xstream_epg_id)}</td>`;
+                    html += `<td>${escapeHtml(entry.xml_name)}</td>`;
+                    html += `<td>${escapeHtml(entry.xml_epg_id)}</td>`;
+                    html += `<td>${escapeHtml(entry.xml_filename)}</td>`;
                     html += '</tr>';
                 });
                 
@@ -976,7 +999,7 @@
             
             for (let key in channel) {
                 if (channel.hasOwnProperty(key)) {
-                    html += `<tr><td>${key}</td><td>${channel[key] || '-'}</td></tr>`;
+                    html += `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(channel[key]) || '-'}</td></tr>`;
                 }
             }
             
