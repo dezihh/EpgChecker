@@ -777,7 +777,7 @@
                         ${ch.epg_channel_id ? `<div class="channel-id">EPG: ${escapeHtml(ch.epg_channel_id)}</div>` : ''}
                     </div>
                     <div class="channel-actions">
-                        <input type="number" class="number-input" placeholder="Nr." id="num-${escapeHtml(ch.stream_id)}" min="1" onclick="event.stopPropagation()">
+                        <input type="number" class="number-input" placeholder="Nr." id="num-${escapeHtml(ch.stream_id)}" min="1" step="1" onclick="event.stopPropagation()">
                         <button class="btn-small" onclick="addToProgramList('${escapeHtml(ch.stream_id)}', null); event.stopPropagation();">➕</button>
                         <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${escapeHtml(ch.stream_id)}'); event.stopPropagation();">ℹ️</button>
                     </div>
@@ -818,7 +818,7 @@
                         <div class="channel-id">${escapeHtml(ch.id)}</div>
                     </div>
                     <div class="channel-actions">
-                        <input type="number" class="number-input" placeholder="Nr." id="xml-num-${escapeHtml(ch.id)}" min="1" onclick="event.stopPropagation()">
+                        <input type="number" class="number-input" placeholder="Nr." id="xml-num-${escapeHtml(ch.id)}" min="1" step="1" onclick="event.stopPropagation()">
                         <button class="btn-small" onclick="addToProgramList(null, '${escapeHtml(ch.id)}'); event.stopPropagation();">➕</button>
                         <button class="btn-small btn-secondary" onclick="showDetails('xml', '${escapeHtml(ch.id)}'); event.stopPropagation();">ℹ️</button>
                     </div>
@@ -997,11 +997,9 @@
             
             let html = '<table class="detail-table">';
             
-            for (let key in channel) {
-                if (channel.hasOwnProperty(key)) {
-                    html += `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(channel[key]) || '-'}</td></tr>`;
-                }
-            }
+            Object.entries(channel).forEach(([key, value]) => {
+                html += `<tr><td>${escapeHtml(key)}</td><td>${escapeHtml(value) || '-'}</td></tr>`;
+            });
             
             html += '</table>';
             
