@@ -381,13 +381,22 @@ def get_program_list():
 def remove_from_program_list():
     global program_list
     
-    data = request.json
-    number = data.get('number')
+    try:
+        data = request.json
+        number = data.get('number')
+        
+        if not number:
+            return jsonify({'success': False, 'error': 'Nummer erforderlich'}), 400
+        
+        if number in program_list:
+            del program_list[number]
+            return jsonify({'success': True})
+        else:
+            return jsonify({'success': False, 'error': 'Eintrag nicht gefunden'}), 404
     
-    if number in program_list:
-        del program_list[number]
-    
-    return jsonify({'success': True, 'program_list': program_list})
+    except Exception as e:
+        app.logger.error(f"Error removing from program list: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
 
 @app.route('/api/auto_match', methods=['POST'])
 def auto_match():
