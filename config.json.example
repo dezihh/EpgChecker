@@ -10,5 +10,11 @@
   },
   "xml_epg": {
     "url": "http://example.com/epg.xml.gz"
+  },
+  "history": {
+    "xstream_urls": [],
+    "xml_urls": [],
+    "max_history": 10
   }
+
 }
