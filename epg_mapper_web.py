@@ -13,9 +13,14 @@ app = Flask(__name__)
 CONFIG_FILE = 'config.json'
 
 def load_config():
+    config_path = os.path.abspath(CONFIG_FILE)
+    app.logger.info(f"Loading config from: {config_path}")
+    
     if os.path.exists(CONFIG_FILE):
         with open(CONFIG_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+            loaded_config = json.load(f)
+            app.logger.info(f"Config loaded: xml_epg.url = {loaded_config.get('xml_epg', {}).get('url', 'N/A')}")
+            return loaded_config
     else:
         # Default Config
         default_config = {
@@ -31,8 +36,6 @@ def save_config(config):
     with open(CONFIG_FILE, 'w', encoding='utf-8') as f:
         json.dump(config, f, indent=2, ensure_ascii=False)
 
-config = load_config()
-
 # In-Memory Storage
 xml_channels = []
 xstream_channels = []
@@ -44,11 +47,15 @@ def index():
 
 @app.route('/api/config', methods=['GET'])
 def get_config():
-    return jsonify(config)
+    # Config immer frisch aus Datei laden
+    current_config = load_config()
+    return jsonify(current_config)
 
 @app.route('/api/add_history', methods=['POST'])
 def add_history():
-    global config
+    # Config frisch laden
+    current_config = load_config()
+    
     data = request.json
     history_type = data.get('type')  # 'xstream' or 'xml'
     url = data.get('url', '').strip()
@@ -57,9 +64,9 @@ def add_history():
         return jsonify({'success': False}), 400
     
     if history_type == 'xstream':
-        history_list = config['history']['xstream_urls']
+        history_list = current_config['history']['xstream_urls']
     elif history_type == 'xml':
-        history_list = config['history']['xml_urls']
+        history_list = current_config['history']['xml_urls']
     else:
         return jsonify({'success': False}), 400
     
@@ -71,16 +78,16 @@ def add_history():
     history_list.insert(0, url)
     
     # Begrenze History
-    max_history = config['history']['max_history']
+    max_history = current_config['history']['max_history']
     if len(history_list) > max_history:
         history_list = history_list[:max_history]
     
     if history_type == 'xstream':
-        config['history']['xstream_urls'] = history_list
+        current_config['history']['xstream_urls'] = history_list
     else:
-        config['history']['xml_urls'] = history_list
+        current_config['history']['xml_urls'] = history_list
     
-    save_config(config)
+    save_config(current_config)
     return jsonify({'success': True})
 
 @app.route('/api/upload_xml', methods=['POST'])
@@ -96,16 +103,24 @@ def upload_xml():
         # Prüfe ob Datei komprimiert ist
         file_content = file.read()
         
-        # Versuche GZ zu entpacken
-        if file.filename.endswith('.gz') or file_content[:2] == b'\x1f\x8b':
+        # Versuche GZ zu entpacken nur wenn es wirklich GZ ist
+        is_gzipped = (file.filename.endswith('.gz') or file_content[:2] == b'\x1f\x8b')
+        
+        if is_gzipped:
             try:
                 content = gzip.decompress(file_content).decode('utf-8')
                 app.logger.info("File decompressed from GZ format")
             except Exception as e:
                 app.logger.error(f"GZ decompression failed: {str(e)}")
-                return jsonify({'error': f'Fehler beim Entpacken der GZ-Datei: {str(e)}'}), 500
+                # Fallback: Versuche als normale Datei
+                try:
+                    content = file_content.decode('utf-8')
+                    app.logger.info("Fallback: Reading as plain text")
+                except:
+                    return jsonify({'error': f'Fehler beim Lesen der Datei: {str(e)}'}), 500
         else:
             content = file_content.decode('utf-8')
+            app.logger.info("Reading as plain XML file")
         
         root = ET.fromstring(content)
         
@@ -145,18 +160,27 @@ def load_xml_url():
         
         # Prüfe ob Content GZ-komprimiert ist
         content_encoding = response.headers.get('content-encoding', '').lower()
-        content_type = response.headers.get('content-type', '').lower()
         
-        # Automatische GZ-Erkennung
-        if content_encoding == 'gzip' or url.endswith('.gz') or response.content[:2] == b'\x1f\x8b':
+        # Automatische GZ-Erkennung (nur wenn wirklich GZ Magic Bytes vorhanden)
+        is_gzipped = (content_encoding == 'gzip' or 
+                      url.endswith('.gz') or 
+                      response.content[:2] == b'\x1f\x8b')
+        
+        if is_gzipped:
             try:
                 content = gzip.decompress(response.content).decode('utf-8')
                 app.logger.info("URL content decompressed from GZ format")
             except Exception as e:
                 app.logger.error(f"GZ decompression failed: {str(e)}")
-                return jsonify({'error': f'Fehler beim Entpacken der GZ-Datei: {str(e)}'}), 500
+                # Fallback: Versuche als normale Datei
+                try:
+                    content = response.content.decode('utf-8')
+                    app.logger.info("Fallback: Reading as plain text")
+                except:
+                    return jsonify({'error': f'Fehler beim Lesen der Datei: {str(e)}'}), 500
         else:
             content = response.content.decode('utf-8')
+            app.logger.info("Reading as plain XML")
         
         root = ET.fromstring(content)
         
@@ -426,6 +450,8 @@ def export_mappings(format):
     return jsonify({'error': 'Unbekanntes Format'}), 400
 
 if __name__ == '__main__':
-    host = config['server']['host']
-    port = config['server']['port']
+    # Config nur für Server-Start laden
+    startup_config = load_config()
+    host = startup_config['server']['host']
+    port = startup_config['server']['port']
     app.run(host=host, port=port, debug=True)
