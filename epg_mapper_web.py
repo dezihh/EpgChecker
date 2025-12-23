@@ -347,12 +347,12 @@ def add_to_program_list():
         if xml_ch:
             program_list[number]['xml'] = xml_ch
     else:
-        # Create new entry
-        if not xstream_ch:
-            return jsonify({'error': 'XStream Kanal erforderlich für neue Einträge'}), 400
+        # Create new entry - requires at least XStream or XML
+        if not xstream_ch and not xml_ch:
+            return jsonify({'error': 'Mindestens ein Kanal erforderlich'}), 400
         
         program_list[number] = {
-            'xstream': xstream_ch,
+            'xstream': xstream_ch or {},
             'xml': xml_ch
         }
     
