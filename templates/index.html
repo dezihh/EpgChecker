@@ -270,11 +270,13 @@
         
         .modal-content {
             background-color: white;
-            margin: 50px auto;
-            padding: 30px;
+            margin: 30px auto;
+            padding: 20px;
             border-radius: 15px;
-            width: 90%;
-            max-width: 800px;
+            width: 95%;
+            max-width: 1000px;
+            max-height: 85vh;
+            overflow-y: auto;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
         
@@ -325,11 +327,12 @@
             width: 100%;
             border-collapse: collapse;
             margin-top: 20px;
+            font-size: 0.9em;
         }
         
         .program-list-table th,
         .program-list-table td {
-            padding: 12px;
+            padding: 8px 10px;
             text-align: left;
             border-bottom: 1px solid #e0e0e0;
         }
@@ -338,10 +341,29 @@
             background: #667eea;
             color: white;
             font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 10;
         }
         
         .program-list-table tr:hover {
             background: #f8f9fa;
+        }
+        
+        /* Visual grouping for entries with same number */
+        .program-list-table tr.number-group-start {
+            border-top: 3px solid #667eea;
+        }
+        
+        .program-list-table tr.number-group-start td:first-child {
+            font-weight: 700;
+            color: #667eea;
+            background: #f0f3ff;
+        }
+        
+        .program-list-table tr.number-group-member td:first-child {
+            background: #f0f3ff;
+            border-right: 2px solid #667eea;
         }
         
         @media (max-width: 1024px) {
@@ -959,8 +981,12 @@
                 html += '<th>Aktionen</th>';
                 html += '</tr></thead><tbody>';
                 
-                data.program_list.forEach(entry => {
-                    html += '<tr>';
+                let lastNumber = null;
+                data.program_list.forEach((entry, index) => {
+                    const isNewGroup = entry.number !== lastNumber;
+                    const groupClass = isNewGroup ? 'number-group-start' : 'number-group-member';
+                    
+                    html += `<tr class="${groupClass}">`;
                     html += `<td>${escapeHtml(entry.number)}</td>`;
                     html += `<td>${escapeHtml(entry.xstream_name)}</td>`;
                     html += `<td>${escapeHtml(entry.xstream_epg_id)}</td>`;
@@ -969,6 +995,8 @@
                     html += `<td>${escapeHtml(entry.xml_filename)}</td>`;
                     html += `<td><button class="btn-small btn-secondary" onclick="deleteFromProgramList(${entry.id}); event.stopPropagation();" title="Löschen">🗑️</button></td>`;
                     html += '</tr>';
+                    
+                    lastNumber = entry.number;
                 });
                 
                 html += '</tbody></table>';
