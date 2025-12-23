@@ -263,13 +263,19 @@
             <div class="section">
                 <div class="section-title">🌐 XStream API Zugangsdaten</div>
                 <div class="input-group">
-                    <input type="text" id="xstream-url" placeholder="Server:Port (z.B. http://192.168.1.100:8080)" style="flex: 2;">
+                    <div style="position: relative; flex: 2;">
+                        <input type="text" id="xstream-url" placeholder="Server:Port (z.B. http://192.168.1.100:8080)" 
+                               style="width: 100%;" autocomplete="off">
+                        <select id="xstream-history-select" 
+                                style="position: absolute; top: 100%; left: 0; right: 0; display: none; max-height: 200px; overflow-y: auto; background: white; border: 2px solid #667eea; border-top: none; z-index: 1000;">
+                        </select>
+                    </div>
                     <input type="text" id="xstream-user" placeholder="Username">
                     <input type="password" id="xstream-pass" placeholder="Password">
                     <button onclick="loadXStream()">XStream Laden</button>
                 </div>
                 <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                    ℹ️ Nur Server-URL mit Port angeben (z.B. http://server:80) - ohne /player_api.php
+                    ℹ Nur Server-URL mit Port angeben (z.B. http://server:80) - ohne /player_api.php
                 </div>
             </div>
             
@@ -277,12 +283,21 @@
             <div class="section">
                 <div class="section-title">📄 XML EPG Datei</div>
                 <div class="input-group">
-                    <input type="text" id="xml-url" placeholder="XML EPG URL (optional)" style="flex: 2;">
+                    <div style="position: relative; flex: 2;">
+                        <input type="text" id="xml-url" placeholder="XML EPG URL (auch .gz möglich)" 
+                               style="width: 100%;" autocomplete="off">
+                        <select id="xml-history-select" 
+                                style="position: absolute; top: 100%; left: 0; right: 0; display: none; max-height: 200px; overflow-y: auto; background: white; border: 2px solid #667eea; border-top: none; z-index: 1000;">
+                        </select>
+                    </div>
                     <button onclick="loadXMLFromURL()">Von URL laden</button>
                 </div>
                 <div class="input-group" style="margin-top: 10px;">
-                    <input type="file" id="xml-file" accept=".xml">
+                    <input type="file" id="xml-file" accept=".xml,.gz">
                     <button onclick="uploadXML()">Datei hochladen</button>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    ℹ Unterstützt XML und GZ-komprimierte Dateien
                 </div>
             </div>
             
@@ -325,8 +340,8 @@
             
             <!-- Controls -->
             <div class="controls">
-                <button onclick="mapChannels()">➡️ Zuordnen</button>
-                <button onclick="unmapChannel()">⬅️ Zuordnung entfernen</button>
+                <button onclick="mapChannels()">➡ Zuordnen</button>
+                <button onclick="unmapChannel()">⬅ Zuordnung entfernen</button>
             </div>
             
             <!-- Export -->
@@ -352,11 +367,194 @@
         const ITEMS_PER_PAGE = 100;
         let currentXStreamPage = 1;
         let currentXMLPage = 1;
+        let appConfig = {};
         
         function setStatus(message, type = '') {
             const status = document.getElementById('status');
             status.textContent = message;
             status.className = 'status-bar ' + type;
+        }
+        
+        // Config laden beim Start
+        async function loadConfig() {
+            try {
+                const response = await fetch('/api/config');
+                
+                if (!response.ok) {
+                    console.error('Config fetch failed:', response.status);
+                    return;
+                }
+                
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    console.error('Config response is not JSON');
+                    return;
+                }
+                
+                appConfig = await response.json();
+                console.log('Config loaded:', appConfig);
+                
+                // Felder mit Config vorausfüllen
+                if (appConfig.xstream && appConfig.xstream.url) {
+                    const xstreamUrlField = document.getElementById('xstream-url');
+                    if (xstreamUrlField) {
+                        xstreamUrlField.value = appConfig.xstream.url;
+                        console.log('Set xstream URL:', appConfig.xstream.url);
+                    }
+                }
+                if (appConfig.xstream && appConfig.xstream.username) {
+                    const xstreamUserField = document.getElementById('xstream-user');
+                    if (xstreamUserField) {
+                        xstreamUserField.value = appConfig.xstream.username;
+                        console.log('Set xstream username:', appConfig.xstream.username);
+                    }
+                }
+                if (appConfig.xstream && appConfig.xstream.password) {
+                    const xstreamPassField = document.getElementById('xstream-pass');
+                    if (xstreamPassField) {
+                        xstreamPassField.value = appConfig.xstream.password;
+                        console.log('Set xstream password: ***');
+                    }
+                }
+                if (appConfig.xml_epg && appConfig.xml_epg.url) {
+                    const xmlUrlField = document.getElementById('xml-url');
+                    if (xmlUrlField) {
+                        xmlUrlField.value = appConfig.xml_epg.url;
+                        console.log('Set XML URL:', appConfig.xml_epg.url);
+                    }
+                }
+                
+                // History Dropdowns erstellen
+                setupHistoryDropdowns();
+            } catch (error) {
+                console.error('Fehler beim Laden der Config:', error);
+                // Nicht kritisch - App funktioniert auch ohne Config
+            }
+        }
+        
+        function setupHistoryDropdowns() {
+            const xstreamUrlInput = document.getElementById('xstream-url');
+            const xstreamSelect = document.getElementById('xstream-history-select');
+            const xmlUrlInput = document.getElementById('xml-url');
+            const xmlSelect = document.getElementById('xml-history-select');
+            
+            // XStream History Setup
+            if (appConfig.history && appConfig.history.xstream_urls && appConfig.history.xstream_urls.length > 0) {
+                console.log('XStream History:', appConfig.history.xstream_urls);
+                
+                xstreamUrlInput.addEventListener('focus', () => {
+                    xstreamSelect.innerHTML = '';
+                    appConfig.history.xstream_urls.forEach(url => {
+                        const option = document.createElement('option');
+                        option.value = url;
+                        option.textContent = url;
+                        option.style.cssText = 'padding: 8px; cursor: pointer;';
+                        option.onclick = () => {
+                            xstreamUrlInput.value = url;
+                            xstreamSelect.style.display = 'none';
+                        };
+                        xstreamSelect.appendChild(option);
+                    });
+                    xstreamSelect.style.display = 'block';
+                });
+                
+                xstreamUrlInput.addEventListener('input', () => {
+                    const searchTerm = xstreamUrlInput.value.toLowerCase();
+                    xstreamSelect.innerHTML = '';
+                    
+                    const filtered = appConfig.history.xstream_urls.filter(url => 
+                        url.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (filtered.length > 0) {
+                        filtered.forEach(url => {
+                            const option = document.createElement('option');
+                            option.value = url;
+                            option.textContent = url;
+                            option.style.cssText = 'padding: 8px; cursor: pointer;';
+                            option.onclick = () => {
+                                xstreamUrlInput.value = url;
+                                xstreamSelect.style.display = 'none';
+                            };
+                            xstreamSelect.appendChild(option);
+                        });
+                        xstreamSelect.style.display = 'block';
+                    } else {
+                        xstreamSelect.style.display = 'none';
+                    }
+                });
+                
+                xstreamUrlInput.addEventListener('blur', () => {
+                    setTimeout(() => xstreamSelect.style.display = 'none', 200);
+                });
+            } else {
+                console.log('No XStream history available');
+            }
+            
+            // XML History Setup
+            if (appConfig.history && appConfig.history.xml_urls && appConfig.history.xml_urls.length > 0) {
+                console.log('XML History:', appConfig.history.xml_urls);
+                
+                xmlUrlInput.addEventListener('focus', () => {
+                    xmlSelect.innerHTML = '';
+                    appConfig.history.xml_urls.forEach(url => {
+                        const option = document.createElement('option');
+                        option.value = url;
+                        option.textContent = url;
+                        option.style.cssText = 'padding: 8px; cursor: pointer;';
+                        option.onclick = () => {
+                            xmlUrlInput.value = url;
+                            xmlSelect.style.display = 'none';
+                        };
+                        xmlSelect.appendChild(option);
+                    });
+                    xmlSelect.style.display = 'block';
+                });
+                
+                xmlUrlInput.addEventListener('input', () => {
+                    const searchTerm = xmlUrlInput.value.toLowerCase();
+                    xmlSelect.innerHTML = '';
+                    
+                    const filtered = appConfig.history.xml_urls.filter(url => 
+                        url.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (filtered.length > 0) {
+                        filtered.forEach(url => {
+                            const option = document.createElement('option');
+                            option.value = url;
+                            option.textContent = url;
+                            option.style.cssText = 'padding: 8px; cursor: pointer;';
+                            option.onclick = () => {
+                                xmlUrlInput.value = url;
+                                xmlSelect.style.display = 'none';
+                            };
+                            xmlSelect.appendChild(option);
+                        });
+                        xmlSelect.style.display = 'block';
+                    } else {
+                        xmlSelect.style.display = 'none';
+                    }
+                });
+                
+                xmlUrlInput.addEventListener('blur', () => {
+                    setTimeout(() => xmlSelect.style.display = 'none', 200);
+                });
+            } else {
+                console.log('No XML history available');
+            }
+        }
+        
+        async function addToHistory(type, url) {
+            try {
+                await fetch('/api/add_history', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({type, url})
+                });
+            } catch (error) {
+                console.error('Fehler beim Speichern der History:', error);
+            }
         }
         
         async function uploadXML() {
@@ -403,6 +601,10 @@
             
             try {
                 setStatus('Lade XML von URL...', '');
+                
+                // Zur History hinzufügen
+                await addToHistory('xml', url);
+                
                 const response = await fetch('/api/load_xml_url', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -418,6 +620,10 @@
                 
                 setStatus(`XML von URL geladen: ${data.count} Sender`, 'success');
                 document.getElementById('xml-count').textContent = data.count;
+                
+                // Config neu laden um History zu aktualisieren
+                await loadConfig();
+                
                 loadChannels();
             } catch (error) {
                 setStatus('Fehler beim Laden: ' + error.message, 'error');
@@ -436,6 +642,10 @@
             
             try {
                 setStatus('Lade XStream Daten...', '');
+                
+                // Zur History hinzufügen
+                await addToHistory('xstream', url);
+                
                 const response = await fetch('/api/load_xstream', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
@@ -451,6 +661,10 @@
                 
                 setStatus(`XStream geladen: ${data.count} Sender`, 'success');
                 document.getElementById('xstream-count').textContent = data.count;
+                
+                // Config neu laden um History zu aktualisieren
+                await loadConfig();
+                
                 loadChannels();
             } catch (error) {
                 setStatus('Fehler beim Laden: ' + error.message, 'error');
@@ -689,8 +903,8 @@
             setStatus(`Export als ${format.toUpperCase()} gestartet`, 'success');
         }
         
-        // Initial load
-        loadChannels();
+        // Initial load - nur Config laden, keine Channels
+        loadConfig();
     </script>
 </body>
 </html>
