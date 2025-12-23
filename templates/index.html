@@ -967,7 +967,7 @@
                     html += `<td>${escapeHtml(entry.xml_name)}</td>`;
                     html += `<td>${escapeHtml(entry.xml_epg_id)}</td>`;
                     html += `<td>${escapeHtml(entry.xml_filename)}</td>`;
-                    html += `<td><button class="btn-small btn-secondary" onclick="deleteFromProgramList('${entry.number}'); event.stopPropagation();" title="Löschen">🗑️</button></td>`;
+                    html += `<td><button class="btn-small btn-secondary" onclick="deleteFromProgramList(${entry.id}); event.stopPropagation();" title="Löschen">🗑️</button></td>`;
                     html += '</tr>';
                 });
                 
@@ -984,8 +984,8 @@
             document.getElementById('programListModal').style.display = 'none';
         }
         
-        async function deleteFromProgramList(number) {
-            if (!confirm(`Möchten Sie Eintrag Nr. ${number} wirklich löschen?`)) {
+        async function deleteFromProgramList(entryId) {
+            if (!confirm(`Möchten Sie diesen Eintrag wirklich löschen?`)) {
                 return;
             }
             
@@ -993,7 +993,7 @@
                 const response = await fetch('/api/remove_from_program_list', {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({number: number})
+                    body: JSON.stringify({id: entryId})
                 });
                 
                 const data = await response.json();
