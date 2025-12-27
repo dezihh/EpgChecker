@@ -3,6 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <title>IPTV EPG Checker</title>
     <style>
         * {
@@ -15,7 +16,7 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            padding: 20px;
+            padding: 4px;
         }
         
         .container {
@@ -30,18 +31,30 @@
         .header {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            padding: 30px;
-            text-align: center;
+            padding: 6px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .header-row {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: center;
         }
         
         h1 {
-            font-size: 2.5em;
-            margin-bottom: 10px;
+            font-size: 1.6em;
+            margin-bottom: 6px;
+            letter-spacing: 0.2px;
         }
         
         .subtitle {
             opacity: 0.9;
-            font-size: 1.1em;
+            font-size: 0.95em;
+            display: inline-block;
         }
         
         .content {
@@ -125,6 +138,11 @@
         .btn-small {
             padding: 5px 10px;
             font-size: 0.9em;
+        }
+
+        .btn-compact {
+            padding: 8px 14px;
+            font-size: 0.95em;
         }
         
         .channels-container {
@@ -229,9 +247,9 @@
         
         .stats {
             display: flex;
-            gap: 20px;
-            justify-content: center;
-            margin: 20px 0;
+            gap: 12px;
+            justify-content: flex-start;
+            margin: 0;
             flex-wrap: wrap;
         }
         
@@ -239,13 +257,44 @@
             background: white;
             border: 2px solid #e0e0e0;
             border-radius: 10px;
-            padding: 20px;
-            min-width: 150px;
+            padding: 14px;
+            min-width: 120px;
             text-align: center;
+        }
+
+        .top-row {
+            display: grid;
+            grid-template-columns: auto 1fr auto;
+            gap: 16px;
+            align-items: center;
+            margin: 12px 0 8px 0;
+        }
+
+        .center-search {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-width: 220px;
+            width: 100%;
+        }
+
+        .center-search input[type="text"] {
+            width: 100%;
+        }
+
+        .button-column {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            min-width: 180px;
+        }
+
+        .button-column button {
+            width: 100%;
         }
         
         .stat-number {
-            font-size: 2.5em;
+            font-size: 2.1em;
             font-weight: 700;
             color: #667eea;
         }
@@ -376,73 +425,34 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎬 IPTV EPG Checker</h1>
-            <p class="subtitle">EPG Daten vergleichen und Programmliste erstellen</p>
+            <div class="header-row">
+                <h1>🎬 IPTV EPG Checker</h1>
+                <span class="subtitle">EPG Daten vergleichen und Programmliste erstellen</span>
+            </div>
         </div>
         
         <div class="content">
-            <!-- XStream API Section -->
-            <div class="section">
-                <div class="section-title">🌐 XStream API Zugangsdaten</div>
-                <div class="input-group">
-                    <div style="position: relative; flex: 2;">
-                        <input type="text" id="xstream-url" placeholder="Server:Port (z.B. http://192.168.1.100:8080)" 
-                               style="width: 100%;" autocomplete="off">
-                        <select id="xstream-history-select" 
-                                style="position: absolute; top: 100%; left: 0; right: 0; display: none; max-height: 200px; overflow-y: auto; background: white; border: 2px solid #667eea; border-top: none; z-index: 1000;">
-                        </select>
+            <!-- Stats + Search in one row -->
+            <div class="top-row">
+                <div class="stats">
+                    <div class="stat-card">
+                        <div class="stat-number" id="xstream-count">0</div>
+                        <div class="stat-label">XStream Sender</div>
                     </div>
-                    <input type="text" id="xstream-user" placeholder="Username">
-                    <input type="password" id="xstream-pass" placeholder="Password">
-                    <button onclick="loadXStream()">XStream Laden</button>
-                </div>
-                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                    ℹ Nur Server-URL mit Port angeben (z.B. http://server:80) - ohne /player_api.php
-                </div>
-            </div>
-            
-            <!-- XML Upload Section -->
-            <div class="section">
-                <div class="section-title">📄 XML EPG Datei</div>
-                <div class="input-group">
-                    <div style="position: relative; flex: 2;">
-                        <input type="text" id="xml-url" placeholder="XML EPG URL (auch .gz möglich)" 
-                               style="width: 100%;" autocomplete="off">
-                        <select id="xml-history-select" 
-                                style="position: absolute; top: 100%; left: 0; right: 0; display: none; max-height: 200px; overflow-y: auto; background: white; border: 2px solid #667eea; border-top: none; z-index: 1000;">
-                        </select>
+                    <div class="stat-card">
+                        <div class="stat-number" id="xml-count">0</div>
+                        <div class="stat-label">XML Sender</div>
                     </div>
-                    <button onclick="loadXMLFromURL()">Von URL laden</button>
+                    <div class="stat-card">
+                        <div class="stat-number" id="program-list-count">0</div>
+                        <div class="stat-label">Prog. Eintr.</div>
+                    </div>
                 </div>
-                <div class="input-group" style="margin-top: 10px;">
-                    <input type="file" id="xml-file" accept=".xml,.gz">
-                    <button onclick="uploadXML()">Datei hochladen</button>
-                </div>
-                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
-                    ℹ Unterstützt XML und GZ-komprimierte Dateien
-                </div>
-            </div>
-            
-            <!-- Stats -->
-            <div class="stats">
-                <div class="stat-card">
-                    <div class="stat-number" id="xstream-count">0</div>
-                    <div class="stat-label">XStream Sender</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="xml-count">0</div>
-                    <div class="stat-label">XML Sender</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-number" id="program-list-count">0</div>
-                    <div class="stat-label">Programmliste Einträge</div>
-                </div>
-            </div>
-            
-            <!-- Search -->
-            <div class="section">
-                <div class="input-group">
+
+                <div class="center-search">
                     <input type="text" id="search" placeholder="🔍 Sender suchen..." oninput="loadChannels()">
+                </div>
+                <div class="button-column">
                     <button class="btn-success" onclick="autoMatch()">✨ Auto-Match</button>
                     <button class="btn-secondary" onclick="showProgramList()">📋 Programmliste anzeigen</button>
                 </div>
@@ -461,8 +471,93 @@
                 </div>
             </div>
             
+            <!-- Audio Selection Section (shown on stream click) -->
+            <div id="audioSelectionSection" style="display: none; background: #f5f5f5; padding: 20px; margin-top: 20px; border-radius: 8px; border-left: 4px solid #2196F3;">
+                <h3 style="margin-top: 0;">Audio-Spuren: <span id="selectedStreamName" style="color: #2196F3;"></span></h3>
+                <div id="audioTracksContainer" style="margin-bottom: 20px;"></div>
+                <div style="display: flex; gap: 10px;">
+                    <button onclick="playWithProxy();" class="btn btn-success" style="flex: 1;">🎬 ffmpeg Proxy</button>
+                    <button onclick="playWithVLC();" class="btn btn-secondary" style="flex: 1;">🎮 VLC Player</button>
+                </div>
+            </div>
+            
             <!-- Status Bar -->
             <div class="status-bar" id="status">Bereit</div>
+
+            <!-- XStream API Section -->
+            <div class="section">
+                <div class="section-title">🌐 XStream API Zugangsdaten</div>
+                <div class="input-group">
+                    <div style="position: relative; flex: 2;">
+                        <input type="text" id="xstream-url" placeholder="Server:Port (z.B. http://192.168.1.100:8080)" 
+                               style="width: 100%;" autocomplete="off">
+                        <select id="xstream-history-select" 
+                            style="position: absolute; top: 100%; left: 0; right: 0; display: none; max-height: 200px; overflow-y: auto; background: white; border: 2px solid #667eea; border-top: none; z-index: 1000; width: 100%; box-sizing: border-box;">
+                        </select>
+                    </div>
+                    <input type="text" id="xstream-user" placeholder="Username">
+                    <input type="password" id="xstream-pass" placeholder="Password">
+                    <button class="btn-compact" onclick="loadXStream()">Laden</button>
+                    <button class="btn-compact" onclick="saveXStream()">💾 Speichern</button>
+                    <button class="btn-compact" onclick="downloadXStream()">⬇️ Download</button>
+                </div>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="file" id="xstream-file" accept=".json,.gz">
+                    <button class="btn-compact" onclick="uploadXStreamFile()">Datei hochladen</button>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    ℹ Nur Server-URL mit Port angeben (z.B. http://server:80) - ohne /player_api.php
+                </div>
+            </div>
+            
+            <!-- XML Upload Section -->
+            <div class="section">
+                <div class="section-title">📄 XML EPG Datei</div>
+                <div class="input-group">
+                    <div style="position: relative; flex: 2;">
+                        <input type="text" id="xml-url" placeholder="XML EPG URL (auch .gz möglich)" 
+                               style="width: 100%;" autocomplete="off">
+                        <select id="xml-history-select" 
+                            style="position: absolute; top: 100%; left: 0; right: 0; display: none; max-height: 200px; overflow-y: auto; background: white; border: 2px solid #667eea; border-top: none; z-index: 1000; width: 100%; box-sizing: border-box;">
+                        </select>
+                    </div>
+                    <button class="btn-compact" onclick="loadXMLFromURL()">Laden</button>
+                    <button class="btn-compact" onclick="saveXML()">💾 Speichern</button>
+                    <button class="btn-compact" onclick="downloadXML()">⬇️ Download</button>
+                </div>
+                <div class="input-group" style="margin-top: 10px;">
+                    <input type="file" id="xml-file" accept=".xml,.gz">
+                    <button onclick="uploadXML()">Datei hochladen</button>
+                </div>
+                <div style="margin-top: 10px; font-size: 0.9em; color: #666;">
+                    ℹ Unterstützt XML und GZ-komprimierte Dateien
+                </div>
+            </div>
+            
+            <!-- EPG Cache Section -->
+            <div class="section">
+                <div class="section-title">💾 EPG Cache</div>
+                <div style="margin-bottom: 10px;">
+                    <button onclick="loadCacheList()" class="btn-compact">🔄 Aktualisieren</button>
+                </div>
+                <div id="cacheTableContainer" style="max-height: 400px; overflow-y: auto;">
+                    <table style="width: 100%; border-collapse: collapse; font-size: 0.9em;">
+                        <thead style="position: sticky; top: 0; background: #667eea; color: white;">
+                            <tr>
+                                <th style="padding: 8px; text-align: left; min-width: 200px;">Dateiname</th>
+                                <th style="padding: 8px; text-align: center; min-width: 120px;">Datum</th>
+                                <th style="padding: 8px; text-align: right; min-width: 80px;">Größe</th>
+                                <th style="padding: 8px; text-align: center; min-width: 120px;">Aktionen</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cacheTableBody">
+                            <tr>
+                                <td colspan="4" style="padding: 20px; text-align: center; color: #999;">Lade Cache...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
     </div>
     
@@ -487,6 +582,46 @@
             <div id="programListContent"></div>
         </div>
     </div>
+
+    <!-- EPG Validation Modal -->
+    <div id="epgModal" class="modal">
+        <div class="modal-content" style="max-width: 1200px;">
+            <div class="modal-header">
+                <div class="modal-title">EPG Prüfung (offline)</div>
+                <span class="close" onclick="closeEPGModal()">&times;</span>
+            </div>
+            <div id="epgContent"></div>
+        </div>
+    </div>
+
+    <!-- Live Stream Player Modal -->
+    <div id="playerModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <div class="modal-header">
+                <div class="modal-title" id="playerTitle">Live Stream</div>
+                <span class="close" onclick="closePlayerModal()">&times;</span>
+            </div>
+            <div style="background: #000; border-radius: 8px; overflow: hidden;">
+                <video id="livePlayer" controls autoplay playsinline style="width: 100%; height: auto; display: block;"></video>
+            </div>
+            <div style="margin-top: 15px; padding: 10px; background: #f5f5f5; border-radius: 5px;">
+                <div style="display: flex; gap: 10px; align-items: center; margin-bottom: 10px;">
+                    <strong>Audio-Spur:</strong>
+                    <select id="audioTrackSelect" onchange="switchAudioTrack()" style="flex: 1; padding: 6px;">
+                        <option value="-1">Wird geladen...</option>
+                    </select>
+                </div>
+                <strong>Stream URL:</strong>
+                <input type="text" id="streamUrlDisplay" readonly style="width: 100%; padding: 8px; margin-top: 5px; font-family: monospace; font-size: 0.9em;">
+                <div style="display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px;">
+                    <button onclick="copyStreamUrl()">📋 URL kopieren</button>
+                    <button onclick="openInVLC()" id="openVLCBtn" style="display:none;">▶️ In VLC öffnen</button>
+                    <button id="muteToggle" onclick="toggleMute()">🔈 Ton aktivieren</button>
+                </div>
+                <div id="playerStatus" style="margin-top: 8px; font-size: 0.9em; color: #555;">Bereit</div>
+            </div>
+        </div>
+    </div>
     
     <script>
         let selectedXStream = null;
@@ -497,6 +632,7 @@
         let currentXStreamPage = 1;
         let currentXMLPage = 1;
         let appConfig = {};
+        let epgValidationResults = {}; // stream_id -> {status, programmes, epg_id}
         
         // HTML escape function to prevent XSS
         function escapeHtml(unsafe) {
@@ -580,18 +716,29 @@
                         const option = document.createElement('option');
                         option.value = url;
                         option.textContent = url;
-                        option.style.cssText = 'padding: 8px; cursor: pointer;';
-                        option.onclick = () => {
-                            xstreamUrlInput.value = url;
-                            xstreamSelect.style.display = 'none';
-                        };
                         xstreamSelect.appendChild(option);
                     });
+                    xstreamSelect.size = Math.min(appConfig.history.xstream_urls.length, 6);
                     xstreamSelect.style.display = 'block';
                 });
-                
+
+                // Hide only if neither the input nor the select keeps focus
                 xstreamUrlInput.addEventListener('blur', () => {
-                    setTimeout(() => xstreamSelect.style.display = 'none', 200);
+                    setTimeout(() => {
+                        if (document.activeElement !== xstreamSelect) {
+                            xstreamSelect.style.display = 'none';
+                        }
+                    }, 150);
+                });
+
+                // Selecting an entry fills the input and closes the dropdown
+                xstreamSelect.addEventListener('change', () => {
+                    xstreamUrlInput.value = xstreamSelect.value;
+                    xstreamSelect.style.display = 'none';
+                    xstreamUrlInput.focus();
+                });
+                xstreamSelect.addEventListener('blur', () => {
+                    xstreamSelect.style.display = 'none';
                 });
             }
             
@@ -603,20 +750,41 @@
                         const option = document.createElement('option');
                         option.value = url;
                         option.textContent = url;
-                        option.style.cssText = 'padding: 8px; cursor: pointer;';
-                        option.onclick = () => {
-                            xmlUrlInput.value = url;
-                            xmlSelect.style.display = 'none';
-                        };
                         xmlSelect.appendChild(option);
                     });
+                    xmlSelect.size = Math.min(appConfig.history.xml_urls.length, 6);
                     xmlSelect.style.display = 'block';
                 });
-                
+
                 xmlUrlInput.addEventListener('blur', () => {
-                    setTimeout(() => xmlSelect.style.display = 'none', 200);
+                    setTimeout(() => {
+                        if (document.activeElement !== xmlSelect) {
+                            xmlSelect.style.display = 'none';
+                        }
+                    }, 150);
+                });
+
+                xmlSelect.addEventListener('change', () => {
+                    xmlUrlInput.value = xmlSelect.value;
+                    xmlSelect.style.display = 'none';
+                    xmlUrlInput.focus();
+                });
+                xmlSelect.addEventListener('blur', () => {
+                    xmlSelect.style.display = 'none';
                 });
             }
+
+            // Global outside click handler to close dropdowns only when clicking outside
+            document.addEventListener('mousedown', (e) => {
+                const inXstreamArea = (e.target === xstreamUrlInput) || (xstreamSelect && xstreamSelect.contains(e.target));
+                const inXmlArea = (e.target === xmlUrlInput) || (xmlSelect && xmlSelect.contains(e.target));
+                if (!inXstreamArea && xstreamSelect) {
+                    xstreamSelect.style.display = 'none';
+                }
+                if (!inXmlArea && xmlSelect) {
+                    xmlSelect.style.display = 'none';
+                }
+            });
         }
         
         async function addToHistory(type, url) {
@@ -698,6 +866,55 @@
                 setStatus('Fehler beim Laden: ' + error.message, 'error');
             }
         }
+
+        async function saveXML() {
+            try {
+                const filename = prompt('Dateiname für XML (optional, ohne Pfad):', '');
+                const original = confirm('Im Originalformat speichern (gz wenn vorhanden)?');
+                setStatus('Speichere XML Daten...', '');
+                const response = await fetch('/api/save_xml', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({filename: filename || '', original})
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    setStatus('Fehler: ' + (data.error || 'Speichern fehlgeschlagen'), 'error');
+                    return;
+                }
+                let msg = 'XML gespeichert';
+                if (data.xml_path) msg += ` (Datei: ${data.xml_path})`;
+                if (data.channels_path) msg += `, Kanäle: ${data.channels_path}`;
+                setStatus(msg, 'success');
+            } catch (error) {
+                setStatus('Fehler beim Speichern: ' + error.message, 'error');
+            }
+        }
+
+        async function downloadXML() {
+            try {
+                setStatus('Bereite Download vor...', '');
+                const response = await fetch('/api/export_xml');
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    setStatus('Fehler: ' + (data.error || response.statusText), 'error');
+                    return;
+                }
+                const blob = await response.blob();
+                const dlName = response.headers.get('Content-Disposition')?.split('filename="')[1]?.split('"')[0] || 'epg.xml';
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = dlName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                setStatus('Download gestartet', 'success');
+            } catch (error) {
+                setStatus('Fehler beim Download: ' + error.message, 'error');
+            }
+        }
         
         async function loadXStream() {
             const url = document.getElementById('xstream-url').value.trim();
@@ -730,9 +947,175 @@
                 document.getElementById('xstream-count').textContent = data.count;
                 await loadConfig();
                 loadChannels();
+                
+                // Auto-load EPG after successful XStream load
+                setStatus(`XStream geladen: ${data.count} Sender - Lade EPG...`, 'success');
+                await downloadBulkEPG();
             } catch (error) {
                 setStatus('Fehler beim Laden: ' + error.message, 'error');
             }
+        }
+
+        async function saveXStream() {
+            try {
+                const filename = prompt('Dateiname für XStream (optional, ohne Pfad, .json wird angehängt falls fehlt):', '');
+                setStatus('Speichere XStream Daten...', '');
+                const response = await fetch('/api/save_xstream', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({filename: filename || ''})
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    setStatus('Fehler: ' + (data.error || 'Speichern fehlgeschlagen'), 'error');
+                    return;
+                }
+                setStatus('XStream gespeichert: ' + (data.path || ''), 'success');
+            } catch (error) {
+                setStatus('Fehler beim Speichern: ' + error.message, 'error');
+            }
+        }
+
+        async function downloadXStream() {
+            try {
+                setStatus('Bereite Download vor...', '');
+                const response = await fetch('/api/export_xstream');
+                if (!response.ok) {
+                    const data = await response.json().catch(() => ({}));
+                    setStatus('Fehler: ' + (data.error || response.statusText), 'error');
+                    return;
+                }
+                const blob = await response.blob();
+                const dlName = response.headers.get('Content-Disposition')?.split('filename="')[1]?.split('"')[0] || 'xstream.json';
+                const url = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = dlName;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(url);
+                setStatus('Download gestartet', 'success');
+            } catch (error) {
+                setStatus('Fehler beim Download: ' + error.message, 'error');
+            }
+        }
+
+        async function uploadXStreamFile() {
+            const fileInput = document.getElementById('xstream-file');
+            const file = fileInput.files[0];
+            if (!file) {
+                setStatus('Bitte eine Datei auswählen', 'error');
+                return;
+            }
+            const formData = new FormData();
+            formData.append('file', file);
+            try {
+                setStatus('Lade XStream Datei...', '');
+                const response = await fetch('/api/upload_xstream', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await response.json();
+                if (!data.success) {
+                    setStatus('Fehler: ' + (data.error || 'Upload fehlgeschlagen'), 'error');
+                    return;
+                }
+                setStatus(`XStream Datei geladen: ${data.count} Sender`, 'success');
+                document.getElementById('xstream-count').textContent = data.count;
+                loadChannels();
+            } catch (error) {
+                setStatus('Fehler beim Upload: ' + error.message, 'error');
+            }
+        }
+
+        async function downloadBulkEPG() {
+            try {
+                setStatus('Lade EPG (ein Login)...', '');
+                const response = await fetch('/api/download_epg_bulk', {method: 'POST'});
+                const data = await response.json();
+                if (!data.success) {
+                    setStatus('Fehler: ' + (data.error || 'Download fehlgeschlagen'), 'error');
+                    return;
+                }
+                setStatus(`EPG geladen (Programme: ${data.total_programmes || 0}) - Prüfe EPG...`, 'success');
+                // Auto-validate after successful download
+                await validateEPGOffline();
+            } catch (error) {
+                setStatus('Fehler beim EPG-Download: ' + error.message, 'error');
+            }
+        }
+
+        async function validateEPGOffline() {
+            try {
+                setStatus('Prüfe EPG offline...', '');
+                const response = await fetch('/api/validate_epg_offline', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({})});
+                const data = await response.json();
+                if (!data.success) {
+                    setStatus('Fehler: ' + (data.error || 'Validierung fehlgeschlagen'), 'error');
+                    return;
+                }
+                // Store results keyed by stream_id
+                epgValidationResults = {};
+                (data.results || []).forEach(r => {
+                    if (r.stream_id) {
+                        epgValidationResults[r.stream_id] = {
+                            status: r.status,
+                            programmes: r.programmes,
+                            epg_id: r.epg_id
+                        };
+                    }
+                });
+                renderXStreamList(); // Re-render to show badges
+                setStatus('EPG-Prüfung fertig: ' + (data.results || []).length + ' Sender', 'success');
+            } catch (error) {
+                setStatus('Fehler bei EPG-Prüfung: ' + error.message, 'error');
+            }
+        }
+
+        function renderEPGResults(results) {
+            let html = '<table class="program-list-table">';
+            html += '<thead><tr><th>Status</th><th>Sender</th><th>EPG ID</th><th>Programme</th><th>Aktion</th></tr></thead><tbody>';
+            results.forEach(r => {
+                let statusText = '';
+                if (r.status === 'ok') statusText = '✅';
+                else if (r.status === 'no_programmes') statusText = '⚠️ 0 Programme';
+                else if (r.status === 'not_found') statusText = '❌ ID fehlt in XML';
+                else if (r.status === 'missing_epg_id') statusText = '❌ keine epg_channel_id';
+                html += '<tr>';
+                html += `<td>${statusText}</td>`;
+                html += `<td>${escapeHtml(r.name || '')}</td>`;
+                html += `<td>${escapeHtml(r.epg_id || '')}</td>`;
+                html += `<td>${r.programmes ?? 0}</td>`;
+                html += `<td>${r.epg_id ? `<button class="btn-small" onclick="showEPGRaw('${r.epg_id}')">Raw</button>` : ''}</td>`;
+                html += '</tr>';
+            });
+            html += '</tbody></table>';
+            document.getElementById('epgContent').innerHTML = html;
+            document.getElementById('epgModal').style.display = 'block';
+        }
+
+        async function showEPGRaw(epgId) {
+            try {
+                setStatus('Lade EPG-Auszug...', '');
+                const response = await fetch(`/api/get_epg_programs?epg_id=${encodeURIComponent(epgId)}&limit=20`);
+                const data = await response.json();
+                if (!data.success) {
+                    setStatus('Fehler: ' + (data.error || 'Kein EPG gefunden'), 'error');
+                    return;
+                }
+                let pre = escapeHtml(JSON.stringify(data.programmes || [], null, 2));
+                const html = `<div style="max-height: 500px; overflow-y: auto;"><pre style="background: #f5f5f5; padding: 15px; border-radius: 5px; font-size: 0.9em; white-space: pre-wrap; word-wrap: break-word;">${pre}</pre></div>`;
+                document.getElementById('epgContent').innerHTML = html;
+                document.getElementById('epgModal').style.display = 'block';
+                setStatus('EPG-Auszug geladen', 'success');
+            } catch (error) {
+                setStatus('Fehler beim Laden des EPG-Auszugs: ' + error.message, 'error');
+            }
+        }
+
+        function closeEPGModal() {
+            document.getElementById('epgModal').style.display = 'none';
         }
         
         async function loadChannels() {
@@ -796,6 +1179,21 @@
                 // Store raw ID for onclick handlers (don't escape)
                 const rawStreamId = ch.stream_id;
                 
+                // EPG validation status as clickable element
+                let epgStatus = '';
+                const epgResult = epgValidationResults[ch.stream_id];
+                if (epgResult) {
+                    if (epgResult.status === 'ok') {
+                        epgStatus = `<span style="background:#4caf50;color:white;padding:4px 8px;border-radius:4px;font-size:0.9em;cursor:pointer;font-weight:600;" onclick="showEPGRaw('${escapeHtml(epgResult.epg_id)}'); event.stopPropagation();" title="${epgResult.programmes} Programme - klicken für Details">${epgResult.programmes}</span>`;
+                    } else if (epgResult.status === 'no_programmes') {
+                        epgStatus = `<span style="background:#ff9800;color:white;padding:4px 8px;border-radius:4px;font-size:0.9em;" title="EPG ID gefunden, aber keine Programme">0</span>`;
+                    } else if (epgResult.status === 'not_found') {
+                        epgStatus = `<span style="background:#f44336;color:white;padding:4px 8px;border-radius:4px;font-size:0.9em;" title="EPG ID nicht in XML gefunden">❌</span>`;
+                    } else if (epgResult.status === 'missing_epg_id') {
+                        epgStatus = `<span style="background:#9e9e9e;color:white;padding:4px 8px;border-radius:4px;font-size:0.9em;" title="Keine EPG ID gesetzt">⚠️</span>`;
+                    }
+                }
+                
                 item.innerHTML = `
                     <div class="channel-info" onclick="selectXStream('${rawStreamId}')">
                         <div class="channel-name">${escapeHtml(ch.name)}</div>
@@ -803,8 +1201,10 @@
                     </div>
                     <div class="channel-actions">
                         <input type="number" class="number-input" placeholder="Nr." id="num-${rawStreamId}" min="1" step="1" onclick="event.stopPropagation()">
-                        <button class="btn-small" onclick="addToProgramList('${rawStreamId}', null); event.stopPropagation();">➕</button>
-                        <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${rawStreamId}'); event.stopPropagation();">ℹ️</button>
+                        <button class="btn-small btn-success" onclick="playLiveStream('${rawStreamId}', false); event.stopPropagation();" title="Live-Stream abspielen (Original Audio)">📺</button>
+                        <button class="btn-small" onclick="addToProgramList('${rawStreamId}', null); event.stopPropagation();" title="Zur Programmliste hinzufügen">➕</button>
+                        <button class="btn-small btn-secondary" onclick="showDetails('xstream', '${rawStreamId}'); event.stopPropagation();" title="Channel Details">ℹ️</button>
+                        ${epgStatus}
                     </div>
                 `;
                 
@@ -878,6 +1278,92 @@
                 item.classList.add('selected');
                 selectedXStream = streamId;
             }
+            
+            // Find channel name
+            const channel = allXStreamChannels.find(ch => String(ch.stream_id) === String(streamId));
+            if (!channel) return;
+            
+            // Show audio selection and fetch tracks
+            document.getElementById('selectedStreamName').textContent = channel.name;
+            document.getElementById('audioSelectionSection').style.display = 'block';
+            
+            fetchAndDisplayAudioTracks(streamId);
+        }
+        
+        function fetchAndDisplayAudioTracks(streamId) {
+            const container = document.getElementById('audioTracksContainer');
+            container.innerHTML = '<p style="color: #999;">Analysiere Audio-Spuren...</p>';
+            
+            fetch(`/api/inspect_stream?stream_id=${encodeURIComponent(streamId)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) {
+                        container.innerHTML = `<p style="color: #d32f2f;">Fehler: ${data.error}</p>`;
+                        return;
+                    }
+                    
+                    const tracks = data.audio_tracks || [];
+                    if (tracks.length === 0) {
+                        container.innerHTML = '<p style="color: #999;">Keine Audio-Spuren gefunden</p>';
+                        return;
+                    }
+                    
+                    // Create radio buttons for each track
+                    container.innerHTML = '';
+                    tracks.forEach((track, idx) => {
+                        const label = document.createElement('label');
+                        label.style.cssText = 'display: flex; align-items: center; gap: 10px; padding: 8px; cursor: pointer; border-radius: 5px; transition: background 0.2s;';
+                        label.onmouseover = () => label.style.background = '#e8eaf6';
+                        label.onmouseout = () => label.style.background = 'transparent';
+                        
+                        const radio = document.createElement('input');
+                        radio.type = 'radio';
+                        radio.name = 'audioTrack';
+                        radio.value = idx;
+                        if (idx === 0) radio.checked = true;
+                        
+                        const lang = track.language && track.language !== 'und' ? track.language : 'Unbekannt';
+                        const compat = track.compatible ? '✓ Kompatibel' : '⚠️ AC3 (via Proxy)';
+                        const text = document.createElement('span');
+                        text.textContent = `${lang} - ${track.codec} (${track.channels}ch) - ${compat}`;
+                        
+                        label.appendChild(radio);
+                        label.appendChild(text);
+                        container.appendChild(label);
+                    });
+                })
+                .catch(err => {
+                    console.error('Error fetching audio tracks:', err);
+                    container.innerHTML = '<p style="color: #d32f2f;">Fehler beim Analysieren der Audio-Spuren</p>';
+                });
+        }
+        
+        function getSelectedAudioTrack() {
+            const selected = document.querySelector('input[name="audioTrack"]:checked');
+            return selected ? parseInt(selected.value) : 0;
+        }
+        
+        function playWithProxy() {
+            if (!selectedXStream) {
+                setStatus('Bitte einen Stream auswählen', 'error');
+                return;
+            }
+            const audioTrack = getSelectedAudioTrack();
+            playLiveStream(selectedXStream, true, audioTrack);
+        }
+        
+        function playWithVLC() {
+            if (!selectedXStream) {
+                setStatus('Bitte einen Stream auswählen', 'error');
+                return;
+            }
+            const channel = allXStreamChannels.find(ch => String(ch.stream_id) === String(selectedXStream));
+            const baseUrl = appConfig.xstream.url.replace('/player_api.php', '');
+            const streamUrl = `${baseUrl}/live/${appConfig.xstream.username}/${appConfig.xstream.password}/${selectedXStream}.ts`;
+            
+            // Open directly in VLC (or default app)
+            window.open(streamUrl, '_blank');
+            setStatus(`VLC wird geöffnet für: ${channel.name}`, 'success');
         }
         
         function selectXML(xmlId) {
@@ -1071,6 +1557,289 @@
             document.getElementById('detailModal').style.display = 'none';
         }
         
+        function playLiveStream(streamId, useProxy = false, audioTrack = 0) {
+            // Find the channel data
+            const channel = allXStreamChannels.find(ch => String(ch.stream_id) === String(streamId));
+            if (!channel) {
+                setStatus('Fehler: Stream nicht gefunden', 'error');
+                return;
+            }
+            
+            // Build stream URLs from config (prefer HLS, proxy optional for AAC audio)
+            if (!appConfig.xstream || !appConfig.xstream.url || !appConfig.xstream.username || !appConfig.xstream.password) {
+                setStatus('Fehler: XStream Zugangsdaten fehlen', 'error');
+                return;
+            }
+            
+            const baseUrl = appConfig.xstream.url.replace('/player_api.php', '');
+            const hlsUrl = useProxy ? null : `${baseUrl}/live/${appConfig.xstream.username}/${appConfig.xstream.password}/${streamId}.m3u8`;
+            const tsUrl = `${baseUrl}/live/${appConfig.xstream.username}/${appConfig.xstream.password}/${streamId}.ts`;
+            
+            // Show player modal
+            document.getElementById('playerTitle').textContent = `Live: ${channel.name}`;
+            const urlDisplay = document.getElementById('streamUrlDisplay');
+            const video = document.getElementById('livePlayer');
+            const statusEl = document.getElementById('playerStatus');
+            const modal = document.getElementById('playerModal');
+            const muteBtn = document.getElementById('muteToggle');
+
+            // Reset previous playback
+            video.pause();
+            video.removeAttribute('src');
+            if (video.hlsInstance) {
+                video.hlsInstance.destroy();
+                video.hlsInstance = null;
+            }
+            // start muted to satisfy autoplay; user can enable sound via button
+            video.muted = true;
+            video.defaultMuted = true;
+            video.volume = 1.0;
+            statusEl.textContent = useProxy ? 'Startet AAC-Proxy (HLS)...' : 'Lädt… (Ton stumm – "Ton aktivieren" klicken)';
+            if (muteBtn) muteBtn.textContent = '🔈 Ton aktivieren';
+            // Hide VLC button for proxy
+            const vlcBtn = document.getElementById('openVLCBtn');
+            if (vlcBtn) vlcBtn.style.display = 'none';
+
+            const canUseHlsJs = window.Hls && window.Hls.isSupported();
+            const canPlayNativeHls = video.canPlayType('application/vnd.apple.mpegurl');
+
+            urlDisplay.value = '';
+            modal.style.display = 'block';
+            
+            // Fetch audio tracks via ffprobe for display
+            fetch(`/api/inspect_stream?stream_id=${encodeURIComponent(streamId)}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.audio_tracks && data.audio_tracks.length > 0) {
+                        console.log('Audio tracks detected:', data.audio_tracks);
+                        populateAudioTracksFromInspect(data.audio_tracks);
+                    }
+                })
+                .catch(err => console.warn('Could not inspect audio tracks:', err));
+
+            const startPlayback = () => {
+                video.play().then(() => {
+                    statusEl.textContent = video.muted ? 'Spielt (stumm – "Ton aktivieren" klicken)' : 'Spielt';
+                }).catch(err => {
+                    console.error('Playback error:', err);
+                    statusEl.textContent = 'Konnte im Browser nicht abgespielt werden. URL kopieren und extern öffnen (VLC/MPV).';
+                });
+            };
+
+            if (useProxy) {
+                // Start HLS proxy and load with hls.js
+                statusEl.textContent = 'Startet HLS-Proxy...';
+                fetch('/api/start_hls_proxy', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({stream_id: streamId, audio_track: audioTrack})
+                }).then(res => res.json()).then(data => {
+                    if (!data.success) {
+                        statusEl.textContent = 'Fehler beim Starten des Proxys: ' + (data.error || 'Unbekannt');
+                        return;
+                    }
+                    const proxyHlsUrl = `/api/proxy_hls/${streamId}/index.m3u8`;
+                    urlDisplay.value = window.location.origin + proxyHlsUrl;
+                    if (canUseHlsJs) {
+                        const hls = new Hls();
+                        video.hlsInstance = hls;
+                        hls.loadSource(proxyHlsUrl);
+                        hls.attachMedia(video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                            if (hls.audioTracks && hls.audioTracks.length > 0) {
+                                hls.audioTrack = 0;
+                            }
+                            populateAudioTracks(hls);
+                            startPlayback();
+                        });
+                        hls.on(Hls.Events.ERROR, (event, data) => {
+                            console.error('HLS error:', data);
+                            statusEl.textContent = 'HLS-Fehler: ' + (data.details || 'Unbekannt');
+                        });
+                    } else if (canPlayNativeHls) {
+                        video.src = proxyHlsUrl;
+                        video.load();
+                        startPlayback();
+                    } else {
+                        statusEl.textContent = 'Browser unterstützt kein HLS.';
+                    }
+                }).catch(err => {
+                    statusEl.textContent = 'Proxy-Start fehlgeschlagen: ' + err.message;
+                });
+            } else {
+                // Direct playback
+                const targetUrl = (canUseHlsJs || canPlayNativeHls) && hlsUrl ? hlsUrl : tsUrl;
+                urlDisplay.value = targetUrl;
+                if (canUseHlsJs && hlsUrl) {
+                    const hls = new Hls();
+                    video.hlsInstance = hls;
+                    hls.loadSource(hlsUrl);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        if (hls.audioTracks && hls.audioTracks.length > 0) {
+                            hls.audioTrack = 0;
+                        }
+                        populateAudioTracks(hls);
+                        startPlayback();
+                    });
+                    hls.on(Hls.Events.ERROR, (event, data) => {
+                        console.error('HLS error:', data);
+                        statusEl.textContent = 'HLS-Fehler im Browser. URL kopieren und extern öffnen (VLC/MPV).';
+                    });
+                } else if (canPlayNativeHls && hlsUrl) {
+                    video.src = hlsUrl;
+                    video.load();
+                    startPlayback();
+                } else {
+                    video.src = tsUrl;
+                    video.load();
+                    startPlayback();
+                }
+            }
+
+            setStatus(`Stream geöffnet: ${channel.name}${useProxy ? ' (AAC Proxy)' : ''}`, 'success');
+        }
+        
+        function switchAudioTrack() {
+            const video = document.getElementById('livePlayer');
+            const select = document.getElementById('audioTrackSelect');
+            const trackIndex = parseInt(select.value);
+            
+            if (trackIndex < 0 || !video.hlsInstance) return;
+            
+            if (video.hlsInstance.audioTracks && trackIndex < video.hlsInstance.audioTracks.length) {
+                video.hlsInstance.audioTrack = trackIndex;
+                setStatus('Audio-Spur gewechselt', 'success');
+            }
+        }
+        
+        function populateAudioTracks(hls) {
+            const select = document.getElementById('audioTrackSelect');
+            select.innerHTML = '';
+            select.disabled = false;
+            
+            console.log('populateAudioTracks called, hls:', hls);
+            console.log('audioTracks:', hls ? hls.audioTracks : null);
+            
+            if (!hls || !hls.audioTracks || hls.audioTracks.length === 0) {
+                select.innerHTML = '<option value="-1">Keine Auswahl verfügbar (prüfe ffprobe)</option>';
+                return;
+            }
+            
+            hls.audioTracks.forEach((track, idx) => {
+                const option = document.createElement('option');
+                option.value = idx;
+                const name = track.name || track.lang || `Spur ${idx + 1}`;
+                const codec = track.attrs && track.attrs.CODECS ? ` (${track.attrs.CODECS})` : '';
+                option.textContent = `${name}${codec}`;
+                if (idx === hls.audioTrack) {
+                    option.selected = true;
+                }
+                select.appendChild(option);
+            });
+        }
+        
+        function populateAudioTracksFromInspect(tracks) {
+            const select = document.getElementById('audioTrackSelect');
+            select.innerHTML = '';
+            
+            console.log('populateAudioTracksFromInspect:', tracks);
+            
+            if (!tracks || tracks.length === 0) {
+                select.innerHTML = '<option value="-1">Keine Audio-Spuren gefunden</option>';
+                return;
+            }
+            
+            tracks.forEach((track, idx) => {
+                const option = document.createElement('option');
+                option.value = idx;
+                const lang = track.language && track.language !== 'und' ? track.language : '';
+                const codec = track.codec || 'unknown';
+                const compat = track.compatible ? '✓' : '⚠️';
+                option.textContent = `${compat} ${lang} ${codec} (${track.channels}ch)`;
+                select.appendChild(option);
+            });
+            
+            // Note: This is informational only - actual switching requires HLS manifest with alternate audio
+            select.disabled = true;
+            select.title = 'Informativ - Stream hat diese Audio-Spuren (Wechsel nur bei HLS mit alternates)';
+        }
+
+        function closePlayerModal() {
+            const video = document.getElementById('livePlayer');
+            
+            // Stop HLS proxy if active
+            if (video.hlsInstance && video.hlsInstance.url && video.hlsInstance.url.includes('/api/proxy_hls/')) {
+                const match = video.hlsInstance.url.match(/\/api\/proxy_hls\/([^\/]+)\//);
+                if (match) {
+                    fetch('/api/stop_hls_proxy', {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({stream_id: match[1]})
+                    }).catch(() => {});
+                }
+            }
+            
+            video.pause();
+            video.removeAttribute('src');
+            if (video.hlsInstance) {
+                video.hlsInstance.destroy();
+                video.hlsInstance = null;
+            }
+            video.muted = true;
+            video.defaultMuted = true;
+            const muteBtn = document.getElementById('muteToggle');
+            if (muteBtn) muteBtn.textContent = '🔈 Ton aktivieren';
+            // Hide VLC button
+            const vlcBtn = document.getElementById('openVLCBtn');
+            if (vlcBtn) vlcBtn.style.display = 'none';
+            document.getElementById('playerModal').style.display = 'none';
+        }
+
+        function openInVLC() {
+            const streamUrl = document.getElementById('streamUrlDisplay').value;
+            if (!streamUrl) return;
+            
+            // Extract stream_id from proxy URL
+            const match = streamUrl.match(/stream_id=([^&]+)/);
+            if (!match) {
+                setStatus('Fehler: Keine Stream-ID gefunden', 'error');
+                return;
+            }
+            const streamId = match[1];
+            
+            // Open M3U playlist in new tab - browser will pass to VLC
+            const m3uUrl = `/api/proxy_ts.m3u?stream_id=${encodeURIComponent(streamId)}`;
+            window.open(m3uUrl, '_blank');
+            
+            setStatus('M3U-Playlist wird an VLC übergeben...', 'success');
+        }
+
+        function toggleMute() {
+            const video = document.getElementById('livePlayer');
+            const muteBtn = document.getElementById('muteToggle');
+            const targetMuted = !video.muted;
+            video.muted = targetMuted;
+            video.defaultMuted = targetMuted;
+            if (!targetMuted) {
+                video.removeAttribute('muted');
+                video.volume = 1.0;
+                video.play().catch(() => {});
+            } else {
+                video.setAttribute('muted', '');
+            }
+            if (muteBtn) {
+                muteBtn.textContent = video.muted ? '🔇 Ton aus' : '🔊 Ton an';
+            }
+        }
+        
+        function copyStreamUrl() {
+            const urlInput = document.getElementById('streamUrlDisplay');
+            urlInput.select();
+            document.execCommand('copy');
+            setStatus('Stream URL in Zwischenablage kopiert', 'success');
+        }
+        
         async function autoMatch() {
             try {
                 setStatus('Suche automatische Übereinstimmungen...', '');
@@ -1090,11 +1859,19 @@
         window.onclick = function(event) {
             const detailModal = document.getElementById('detailModal');
             const programListModal = document.getElementById('programListModal');
+            const epgModal = document.getElementById('epgModal');
+            const playerModal = document.getElementById('playerModal');
             if (event.target == detailModal) {
                 closeDetailModal();
             }
             if (event.target == programListModal) {
                 closeProgramListModal();
+            }
+            if (event.target == epgModal) {
+                closeEPGModal();
+            }
+            if (event.target == playerModal) {
+                closePlayerModal();
             }
         }
         

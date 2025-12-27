@@ -1,0 +1,1394 @@
+[
+  {
+    "id": "3sat.de",
+    "name": "3sat"
+  },
+  {
+    "id": "13thStreetUniversal.de",
+    "name": "13th Street Universal"
+  },
+  {
+    "id": "123tv.de",
+    "name": "1-2-3.tv"
+  },
+  {
+    "id": "132",
+    "name": "Jukebox (Sky)"
+  },
+  {
+    "id": "134",
+    "name": "Heimatkanal (Sky)"
+  },
+  {
+    "id": "161",
+    "name": "a.tv"
+  },
+  {
+    "id": "179",
+    "name": "Testkanal L04"
+  },
+  {
+    "id": "242",
+    "name": "rbb fernsehen Brandenburg"
+  },
+  {
+    "id": "243",
+    "name": "Testkanal L02"
+  },
+  {
+    "id": "257",
+    "name": "Testkanal I03"
+  },
+  {
+    "id": "366",
+    "name": "Sport 16 - myTeamTV"
+  },
+  {
+    "id": "367",
+    "name": "Sport 15 - myTeamTV"
+  },
+  {
+    "id": "369",
+    "name": "Sport 17 - myTeamTV"
+  },
+  {
+    "id": "411",
+    "name": "Lokal-TV"
+  },
+  {
+    "id": "413",
+    "name": "Meine Aufnahmen"
+  },
+  {
+    "id": "416",
+    "name": "Testkanal L01"
+  },
+  {
+    "id": "442",
+    "name": "Testkanal L03"
+  },
+  {
+    "id": "443",
+    "name": "Testkanal H01"
+  },
+  {
+    "id": "457",
+    "name": "Testkanal L07"
+  },
+  {
+    "id": "458",
+    "name": "Warner TV Serie (Sky)"
+  },
+  {
+    "id": "461",
+    "name": "Warner TV Comedy (Sky)"
+  },
+  {
+    "id": "462",
+    "name": "Universal TV (Sky)"
+  },
+  {
+    "id": "465",
+    "name": "SYFY (Sky)"
+  },
+  {
+    "id": "467",
+    "name": "The HISTORY Channel (Sky)"
+  },
+  {
+    "id": "468",
+    "name": "Discovery Channel (Sky)"
+  },
+  {
+    "id": "471",
+    "name": "13TH STREET (Sky)"
+  },
+  {
+    "id": "477",
+    "name": "Testkanal L06"
+  },
+  {
+    "id": "530",
+    "name": "Testkanal I01"
+  },
+  {
+    "id": "532",
+    "name": "Testkanal L05"
+  },
+  {
+    "id": "540",
+    "name": "Warner TV Film (Sky)"
+  },
+  {
+    "id": "548",
+    "name": "Sport 2 - myTeamTV"
+  },
+  {
+    "id": "549",
+    "name": "Sport 3 - myTeamTV"
+  },
+  {
+    "id": "550",
+    "name": "Sport 1 - myTeamTV"
+  },
+  {
+    "id": "616",
+    "name": "Magenta Musik 1"
+  },
+  {
+    "id": "617",
+    "name": "Magenta Musik 2"
+  },
+  {
+    "id": "623",
+    "name": "Sport 8 - myTeamTV"
+  },
+  {
+    "id": "624",
+    "name": "Sport 10 - myTeamTV"
+  },
+  {
+    "id": "625",
+    "name": "Sport 11 - myTeamTV"
+  },
+  {
+    "id": "626",
+    "name": "Sport 9 - myTeamTV"
+  },
+  {
+    "id": "627",
+    "name": "Sport 12 - myTeamTV"
+  },
+  {
+    "id": "628",
+    "name": "Sport 14 - myTeamTV"
+  },
+  {
+    "id": "629",
+    "name": "Sport 13 - myTeamTV"
+  },
+  {
+    "id": "637",
+    "name": "Sky Sport Kompakt 1"
+  },
+  {
+    "id": "645",
+    "name": "Sport 5 - myTeamTV"
+  },
+  {
+    "id": "646",
+    "name": "Sport 7 - myTeamTV"
+  },
+  {
+    "id": "647",
+    "name": "Sport 6 - myTeamTV"
+  },
+  {
+    "id": "648",
+    "name": "Sport 4 - myTeamTV"
+  },
+  {
+    "id": "658",
+    "name": "Romance TV (Sky)"
+  },
+  {
+    "id": "660",
+    "name": "Regio TV"
+  },
+  {
+    "id": "812",
+    "name": "Megathek"
+  },
+  {
+    "id": "1730SAT1Bayern.de",
+    "name": "17:30 SAT.1 Bayern"
+  },
+  {
+    "id": "1730SAT1LIVE.de",
+    "name": "17:30 SAT.1 LIVE"
+  },
+  {
+    "id": "1730SAT1REGIONALHamburgSchleswigHolstein.de",
+    "name": "17:30 SAT.1 REGIONAL Hamburg & Schleswig-Holstein"
+  },
+  {
+    "id": "1730SAT1REGIONALLowerSaxonyBremen.de",
+    "name": "17:30 SAT.1 REGIONAL Lower Saxony & Bremen"
+  },
+  {
+    "id": "3686",
+    "name": "Sport 18 - myTeamTV"
+  },
+  {
+    "id": "3756",
+    "name": "Sky Replay"
+  },
+  {
+    "id": "3757",
+    "name": "MS Sport"
+  },
+  {
+    "id": "3843",
+    "name": "Cartoonito (Sky)"
+  },
+  {
+    "id": "4379",
+    "name": "Nick Jr. (Sky)"
+  },
+  {
+    "id": "4512",
+    "name": "Cartoon Network (Sky)"
+  },
+  {
+    "id": "5026",
+    "name": "Servus TV Motorsport"
+  },
+  {
+    "id": "5141",
+    "name": "Crime+Investigation (Sky)"
+  },
+  {
+    "id": "5144",
+    "name": "SRF"
+  },
+  {
+    "id": "5169",
+    "name": "RTL+ LIVE 3"
+  },
+  {
+    "id": "5170",
+    "name": "RTL+ LIVE 1"
+  },
+  {
+    "id": "5171",
+    "name": "RTL+ LIVE 2"
+  },
+  {
+    "id": "5173",
+    "name": "RTL+ LIVE 5"
+  },
+  {
+    "id": "5174",
+    "name": "RTL+ LIVE 6"
+  },
+  {
+    "id": "5175",
+    "name": "RTL+ LIVE 4"
+  },
+  {
+    "id": "5314",
+    "name": "TV5MONDE Europe"
+  },
+  {
+    "id": "5315",
+    "name": "Al Jazeera English"
+  },
+  {
+    "id": "5329",
+    "name": "RiC"
+  },
+  {
+    "id": "5330",
+    "name": "Asharq News"
+  },
+  {
+    "id": "5331",
+    "name": "Ballermann TV"
+  },
+  {
+    "id": "5386",
+    "name": "France 24 english"
+  },
+  {
+    "id": "5387",
+    "name": "Schlagerparadies.TV"
+  },
+  {
+    "id": "5388",
+    "name": "Volksmusik.TV"
+  },
+  {
+    "id": "5389",
+    "name": "ONE MUSIC TELEVISION"
+  },
+  {
+    "id": "5390",
+    "name": "FOLX MUSIC TELEVISION"
+  },
+  {
+    "id": "5391",
+    "name": "ZWEI MUSIC TELEVISION"
+  },
+  {
+    "id": "5394",
+    "name": "craction"
+  },
+  {
+    "id": "5397",
+    "name": "Stingray Classica"
+  },
+  {
+    "id": "5398",
+    "name": "Stingray iConcerts"
+  },
+  {
+    "id": "5399",
+    "name": "wedo movies"
+  },
+  {
+    "id": "5400",
+    "name": "Stingray DJAZZ"
+  },
+  {
+    "id": "5475",
+    "name": "ERT World"
+  },
+  {
+    "id": "5476",
+    "name": "INPLUS"
+  },
+  {
+    "id": "5477",
+    "name": "OUTtv"
+  },
+  {
+    "id": "5505",
+    "name": "SCHLAGER DELUXE"
+  },
+  {
+    "id": "5506",
+    "name": "CNBC International"
+  },
+  {
+    "id": "5507",
+    "name": "DAZN 1"
+  },
+  {
+    "id": "5508",
+    "name": "DAZN 2"
+  },
+  {
+    "id": "5554",
+    "name": "Sky Sport 10"
+  },
+  {
+    "id": "5555",
+    "name": "Sky Sport Premier League"
+  },
+  {
+    "id": "5556",
+    "name": "Sky Sport Mix"
+  },
+  {
+    "id": "5557",
+    "name": "Sky Sport Bundesliga 10"
+  },
+  {
+    "id": "5558",
+    "name": "Sky Sport Golf"
+  },
+  {
+    "id": "5577",
+    "name": "Sky Showcase"
+  },
+  {
+    "id": "5600",
+    "name": "Euronews English"
+  },
+  {
+    "id": "5601",
+    "name": "FREEDOM"
+  },
+  {
+    "id": "5602",
+    "name": "Espreso"
+  },
+  {
+    "id": "5744",
+    "name": "JenaTV"
+  },
+  {
+    "id": "5839",
+    "name": "Imearth"
+  },
+  {
+    "id": "5840",
+    "name": "Travelxp"
+  },
+  {
+    "id": "6002",
+    "name": "France 2"
+  },
+  {
+    "id": "6003",
+    "name": "France 3"
+  },
+  {
+    "id": "6047",
+    "name": "RTL Bayern"
+  },
+  {
+    "id": "6048",
+    "name": "RTL Rhein-Neckar"
+  },
+  {
+    "id": "AlexBerlin.de",
+    "name": "Alex Berlin"
+  },
+  {
+    "id": "AllgauTV.de",
+    "name": "Allgau TV"
+  },
+  {
+    "id": "AltenburgTV.de",
+    "name": "Altenburg TV"
+  },
+  {
+    "id": "AnimalPlanet.de",
+    "name": "Animal Planet"
+  },
+  {
+    "id": "AnixeHDSerie.de",
+    "name": "Anixe HD Serie"
+  },
+  {
+    "id": "AnixePlus.de",
+    "name": "Anixe +"
+  },
+  {
+    "id": "ARDalpha.de",
+    "name": "ARD-alpha"
+  },
+  {
+    "id": "arte.de",
+    "name": "arte"
+  },
+  {
+    "id": "automotorundsportchannel.de",
+    "name": "auto motor und sport channel"
+  },
+  {
+    "id": "AXNBlack.de",
+    "name": "AXN Black"
+  },
+  {
+    "id": "BabyTV.uk",
+    "name": "BabyTV"
+  },
+  {
+    "id": "BadenTV.de",
+    "name": "Baden TV"
+  },
+  {
+    "id": "BadenTVSud.de",
+    "name": "Baden TV Sud"
+  },
+  {
+    "id": "BBCNewsEurope.uk",
+    "name": "BBC News Europe"
+  },
+  {
+    "id": "BeateUhseTV.de",
+    "name": "Beate-Uhse.TV"
+  },
+  {
+    "id": "beINIZ.tr",
+    "name": "beIN IZ"
+  },
+  {
+    "id": "beINMoviesTurk.tr",
+    "name": "beIN Movies Turk"
+  },
+  {
+    "id": "Bergblick.de",
+    "name": "Bergblick"
+  },
+  {
+    "id": "BibelTV.de",
+    "name": "Bibel TV"
+  },
+  {
+    "id": "Bild.de",
+    "name": "Bild"
+  },
+  {
+    "id": "BlueHustler.nl",
+    "name": "Blue Hustler"
+  },
+  {
+    "id": "BonGusto.de",
+    "name": "BonGusto"
+  },
+  {
+    "id": "Boomerang.de",
+    "name": "Boomerang"
+  },
+  {
+    "id": "BRFernsehenNord.de",
+    "name": "BR Fernsehen Nord"
+  },
+  {
+    "id": "BRFernsehenSud.de",
+    "name": "BR Fernsehen Sud"
+  },
+  {
+    "id": "CartoonNetwork.de",
+    "name": "Cartoon Network"
+  },
+  {
+    "id": "CemTV.tr",
+    "name": "Cem TV"
+  },
+  {
+    "id": "Channel21.de",
+    "name": "Channel 21"
+  },
+  {
+    "id": "CNNInternationalEurope.us",
+    "name": "CNN International Europe"
+  },
+  {
+    "id": "ComedyCentral.de",
+    "name": "Comedy Central"
+  },
+  {
+    "id": "ComedyCentralPlus1.de",
+    "name": "Comedy Central +1"
+  },
+  {
+    "id": "CrimePlusInvestigation.de",
+    "name": "Crime + Investigation"
+  },
+  {
+    "id": "CuriosityChannel.de",
+    "name": "Curiosity Channel"
+  },
+  {
+    "id": "DabeiTV.de",
+    "name": "Dabei TV"
+  },
+  {
+    "id": "DasErste.de",
+    "name": "Das Erste"
+  },
+  {
+    "id": "DeluxeMusic.de",
+    "name": "Deluxe Music"
+  },
+  {
+    "id": "DeutschesMusikFernsehen.de",
+    "name": "Deutsches Musik Fernsehen"
+  },
+  {
+    "id": "DiscoveryChannel.de",
+    "name": "Discovery Channel"
+  },
+  {
+    "id": "DisneyChannel.de",
+    "name": "Disney Channel"
+  },
+  {
+    "id": "DMAX.de",
+    "name": "DMAX"
+  },
+  {
+    "id": "emsTVLingen.de",
+    "name": "ems TV Lingen"
+  },
+  {
+    "id": "eSports1.de",
+    "name": "eSports1"
+  },
+  {
+    "id": "EuroD.tr",
+    "name": "Euro D"
+  },
+  {
+    "id": "EuronewsGerman.fr",
+    "name": "Euronews German"
+  },
+  {
+    "id": "EuronewsItalian.fr",
+    "name": "Euronews Italian"
+  },
+  {
+    "id": "EuronewsRussian.fr",
+    "name": "Euronews Russian"
+  },
+  {
+    "id": "Eurosport1.fr",
+    "name": "Eurosport 1"
+  },
+  {
+    "id": "Eurosport2.fr",
+    "name": "Eurosport 2"
+  },
+  {
+    "id": "EuroStar.tr",
+    "name": "EuroStar"
+  },
+  {
+    "id": "FashionTVEurope.fr",
+    "name": "FashionTV Europe"
+  },
+  {
+    "id": "France24French.fr",
+    "name": "France 24 French"
+  },
+  {
+    "id": "FrankenFernsehen.de",
+    "name": "Franken Fernsehen"
+  },
+  {
+    "id": "FriesischerRundfunkFriedeburg.de",
+    "name": "Friesischer Rundfunk Friedeburg"
+  },
+  {
+    "id": "GEOTelevision.de",
+    "name": "GEO Television"
+  },
+  {
+    "id": "HaberturkTV.tr",
+    "name": "Haberturk TV"
+  },
+  {
+    "id": "Hamburg1.de",
+    "name": "Hamburg 1"
+  },
+  {
+    "id": "HauptstadtTV.de",
+    "name": "Hauptstadt.TV"
+  },
+  {
+    "id": "Heimatkanal.de",
+    "name": "Heimatkanal"
+  },
+  {
+    "id": "HGTV.us",
+    "name": "HGTV"
+  },
+  {
+    "id": "History.de",
+    "name": "History"
+  },
+  {
+    "id": "hrfernsehen.de",
+    "name": "hr-fernsehen"
+  },
+  {
+    "id": "HSE.de",
+    "name": "HSE"
+  },
+  {
+    "id": "ITVNEurope.pl",
+    "name": "ITVN Europe"
+  },
+  {
+    "id": "Jukebox.de",
+    "name": "Jukebox"
+  },
+  {
+    "id": "kabeleins.de",
+    "name": "kabel eins"
+  },
+  {
+    "id": "kabeleinsClassics.de",
+    "name": "kabel eins Classics"
+  },
+  {
+    "id": "kabeleinsDoku.de",
+    "name": "kabel eins Doku"
+  },
+  {
+    "id": "Kanal7.tr",
+    "name": "Kanal 7"
+  },
+  {
+    "id": "KiKA.de",
+    "name": "KiKA"
+  },
+  {
+    "id": "KinoweltTV.de",
+    "name": "Kinowelt TV"
+  },
+  {
+    "id": "KTV.at",
+    "name": "K-TV"
+  },
+  {
+    "id": "Lausitzwelle.de",
+    "name": "Lausitzwelle"
+  },
+  {
+    "id": "LTV.de",
+    "name": "L TV"
+  },
+  {
+    "id": "LustPur.de",
+    "name": "Lust Pur"
+  },
+  {
+    "id": "MagentaSport.de",
+    "name": "Magenta Sport"
+  },
+  {
+    "id": "MarcoPoloTV.de",
+    "name": "Marco Polo TV"
+  },
+  {
+    "id": "MDF1.de",
+    "name": "MDF.1"
+  },
+  {
+    "id": "MDRFernsehenSachsen.de",
+    "name": "MDR Fernsehen Sachsen"
+  },
+  {
+    "id": "MDRFernsehenSachsenAnhalt.de",
+    "name": "MDR Fernsehen Sachsen-Anhalt"
+  },
+  {
+    "id": "MDRFernsehenThuringen.de",
+    "name": "MDR Fernsehen Thuringen"
+  },
+  {
+    "id": "MoreThanSportsTV.de",
+    "name": "More Than Sports TV"
+  },
+  {
+    "id": "Motorvision.de",
+    "name": "Motorvision"
+  },
+  {
+    "id": "MTV.de",
+    "name": "MTV"
+  },
+  {
+    "id": "MunchenTV.de",
+    "name": "Munchen TV"
+  },
+  {
+    "id": "N24Doku.de",
+    "name": "N24 Doku"
+  },
+  {
+    "id": "NashKinomir.de",
+    "name": "Nash Kinomir"
+  },
+  {
+    "id": "NationalGeographic.de",
+    "name": "National Geographic"
+  },
+  {
+    "id": "NationalGeographicWild.de",
+    "name": "National Geographic Wild"
+  },
+  {
+    "id": "NDRFernsehenHamburg.de",
+    "name": "NDR Fernsehen Hamburg"
+  },
+  {
+    "id": "NDRFernsehenMecklenburgVorpommern.de",
+    "name": "NDR Fernsehen Mecklenburg-Vorpommern"
+  },
+  {
+    "id": "NDRFernsehenNiedersachsen.de",
+    "name": "NDR Fernsehen Niedersachsen"
+  },
+  {
+    "id": "NDRFernsehenSchleswigHolstein.de",
+    "name": "NDR Fernsehen Schleswig-Holstein"
+  },
+  {
+    "id": "NickJr.de",
+    "name": "Nick Jr."
+  },
+  {
+    "id": "Nicktoons.de",
+    "name": "Nicktoons"
+  },
+  {
+    "id": "NiederbayernTVDeggendorfStraubing.de",
+    "name": "Niederbayern TV Deggendorf & Straubing"
+  },
+  {
+    "id": "NiederbayernTVLandshut.de",
+    "name": "Niederbayern TV Landshut"
+  },
+  {
+    "id": "NiederbayernTVPassau.de",
+    "name": "Niederbayern TV Passau"
+  },
+  {
+    "id": "Nitro.de",
+    "name": "Nitro"
+  },
+  {
+    "id": "NRWision.de",
+    "name": "NRWision"
+  },
+  {
+    "id": "ntv.de",
+    "name": "n-tv"
+  },
+  {
+    "id": "OberpfalzTV.de",
+    "name": "Oberpfalz TV"
+  },
+  {
+    "id": "OFTVOffenbach.de",
+    "name": "OF-TV Offenbach"
+  },
+  {
+    "id": "OK4.de",
+    "name": "OK4"
+  },
+  {
+    "id": "OK54.de",
+    "name": "OK54"
+  },
+  {
+    "id": "OKTVLudwigshafen.de",
+    "name": "OK-TV Ludwigshafen"
+  },
+  {
+    "id": "OKTVMainz.de",
+    "name": "OK:TV Mainz"
+  },
+  {
+    "id": "OKWeinstrasseNeustadt.de",
+    "name": "OK Weinstrasse Neustadt"
+  },
+  {
+    "id": "One.de",
+    "name": "One"
+  },
+  {
+    "id": "OstWest.de",
+    "name": "Ost West"
+  },
+  {
+    "id": "PenthousePassion.us",
+    "name": "Penthouse Passion"
+  },
+  {
+    "id": "phoenix.de",
+    "name": "phoenix"
+  },
+  {
+    "id": "PlayboyTVEurope.us",
+    "name": "Playboy TV Europe"
+  },
+  {
+    "id": "ProSieben.de",
+    "name": "ProSieben"
+  },
+  {
+    "id": "ProSiebenFun.de",
+    "name": "ProSieben Fun"
+  },
+  {
+    "id": "ProSiebenMaxx.de",
+    "name": "ProSieben Maxx"
+  },
+  {
+    "id": "QVC.de",
+    "name": "QVC"
+  },
+  {
+    "id": "RadioBremenFernsehen.de",
+    "name": "Radio Bremen Fernsehen"
+  },
+  {
+    "id": "Rai1.it",
+    "name": "Rai 1"
+  },
+  {
+    "id": "Rai2.it",
+    "name": "Rai 2"
+  },
+  {
+    "id": "Rai3.it",
+    "name": "Rai 3"
+  },
+  {
+    "id": "rbbFernsehenBerlin.de",
+    "name": "rbb Fernsehen Berlin"
+  },
+  {
+    "id": "RedBullTV.at",
+    "name": "Red Bull TV"
+  },
+  {
+    "id": "RennsteigTV.de",
+    "name": "Rennsteig TV"
+  },
+  {
+    "id": "RFH.de",
+    "name": "RFH"
+  },
+  {
+    "id": "RFO.de",
+    "name": "RFO"
+  },
+  {
+    "id": "RheinMainTV.de",
+    "name": "RheinMain TV"
+  },
+  {
+    "id": "RNF.de",
+    "name": "RNF"
+  },
+  {
+    "id": "RomanceTV.de",
+    "name": "Romance TV"
+  },
+  {
+    "id": "RTL.de",
+    "name": "RTL"
+  },
+  {
+    "id": "RTLCrime.de",
+    "name": "RTL Crime"
+  },
+  {
+    "id": "RTLHessen.de",
+    "name": "RTL Hessen"
+  },
+  {
+    "id": "RTLLiving.de",
+    "name": "RTL Living"
+  },
+  {
+    "id": "RTLNordHamburgSchleswigHolstein.de",
+    "name": "RTL Nord Hamburg & Schleswig-Holstein"
+  },
+  {
+    "id": "RTLNordNiedersachsenBremen.de",
+    "name": "RTL Nord Niedersachsen & Bremen"
+  },
+  {
+    "id": "RTLPassion.de",
+    "name": "RTL Passion"
+  },
+  {
+    "id": "RTLSuper.de",
+    "name": "RTL Super"
+  },
+  {
+    "id": "RTLup.de",
+    "name": "RTLup"
+  },
+  {
+    "id": "RTLWest.de",
+    "name": "RTL West"
+  },
+  {
+    "id": "RTLZwei.de",
+    "name": "RTL Zwei"
+  },
+  {
+    "id": "SachsenFernsehenChemnitz.de",
+    "name": "Sachsen Fernsehen Chemnitz"
+  },
+  {
+    "id": "SachsenFernsehenDresden.de",
+    "name": "Sachsen Fernsehen Dresden"
+  },
+  {
+    "id": "SachsenFernsehenLeipzig.de",
+    "name": "Sachsen Fernsehen Leipzig"
+  },
+  {
+    "id": "SalveTV.de",
+    "name": "Salve TV"
+  },
+  {
+    "id": "SAT1.de",
+    "name": "SAT.1"
+  },
+  {
+    "id": "SAT1emotions.de",
+    "name": "SAT.1 emotions"
+  },
+  {
+    "id": "SAT1Gold.de",
+    "name": "SAT.1 Gold"
+  },
+  {
+    "id": "SAT1NRW.de",
+    "name": "SAT.1 NRW"
+  },
+  {
+    "id": "ServusTV.at",
+    "name": "ServusTV"
+  },
+  {
+    "id": "ShopLC.us",
+    "name": "Shop LC"
+  },
+  {
+    "id": "ShowMax.tr",
+    "name": "Show Max"
+  },
+  {
+    "id": "ShowTurk.tr",
+    "name": "Show Turk"
+  },
+  {
+    "id": "sixx.de",
+    "name": "sixx"
+  },
+  {
+    "id": "SkyAtlantic.de",
+    "name": "Sky Atlantic"
+  },
+  {
+    "id": "SkyCinemaAction.de",
+    "name": "Sky Cinema Action"
+  },
+  {
+    "id": "SkyCinemaBestOf.de",
+    "name": "Sky Cinema Best Of"
+  },
+  {
+    "id": "SkyCinemaClassics.de",
+    "name": "Sky Cinema Classics"
+  },
+  {
+    "id": "SkyCinemaFamily.de",
+    "name": "Sky Cinema Family"
+  },
+  {
+    "id": "SkyCinemaFun.de",
+    "name": "Sky Cinema Fun"
+  },
+  {
+    "id": "SkyCinemaPremieren.de",
+    "name": "Sky Cinema Premieren"
+  },
+  {
+    "id": "SkyCinemaPremierenPlus24.de",
+    "name": "Sky Cinema Premieren +24"
+  },
+  {
+    "id": "SkyCinemaSpecial.de",
+    "name": "Sky Cinema Special"
+  },
+  {
+    "id": "SkyCinemaThriller.de",
+    "name": "Sky Cinema Thriller"
+  },
+  {
+    "id": "SkyCrime.de",
+    "name": "Sky Crime"
+  },
+  {
+    "id": "SkyDocumentaries.de",
+    "name": "Sky Documentaries"
+  },
+  {
+    "id": "SkyKrimi.de",
+    "name": "Sky Krimi"
+  },
+  {
+    "id": "SkyNature.de",
+    "name": "Sky Nature"
+  },
+  {
+    "id": "SkyOne.de",
+    "name": "Sky One"
+  },
+  {
+    "id": "SkySport1.de",
+    "name": "Sky Sport 1"
+  },
+  {
+    "id": "SkySport2.de",
+    "name": "Sky Sport 2"
+  },
+  {
+    "id": "SkySport3.de",
+    "name": "Sky Sport 3"
+  },
+  {
+    "id": "SkySport4.de",
+    "name": "Sky Sport 4"
+  },
+  {
+    "id": "SkySport5.de",
+    "name": "Sky Sport 5"
+  },
+  {
+    "id": "SkySport6.de",
+    "name": "Sky Sport 6"
+  },
+  {
+    "id": "SkySport7.de",
+    "name": "Sky Sport 7"
+  },
+  {
+    "id": "SkySport8.de",
+    "name": "Sky Sport 8"
+  },
+  {
+    "id": "SkySport9.de",
+    "name": "Sky Sport 9"
+  },
+  {
+    "id": "SkySport10.de",
+    "name": "Sky Sport 10"
+  },
+  {
+    "id": "SkySport11.de",
+    "name": "Sky Sport 11"
+  },
+  {
+    "id": "SkySportBundesliga1.de",
+    "name": "Sky Sport Bundesliga 1"
+  },
+  {
+    "id": "SkySportBundesliga2.de",
+    "name": "Sky Sport Bundesliga 2"
+  },
+  {
+    "id": "SkySportBundesliga3.de",
+    "name": "Sky Sport Bundesliga 3"
+  },
+  {
+    "id": "SkySportBundesliga4.de",
+    "name": "Sky Sport Bundesliga 4"
+  },
+  {
+    "id": "SkySportBundesliga5.de",
+    "name": "Sky Sport Bundesliga 5"
+  },
+  {
+    "id": "SkySportBundesliga6.de",
+    "name": "Sky Sport Bundesliga 6"
+  },
+  {
+    "id": "SkySportBundesliga7.de",
+    "name": "Sky Sport Bundesliga 7"
+  },
+  {
+    "id": "SkySportBundesliga8.de",
+    "name": "Sky Sport Bundesliga 8"
+  },
+  {
+    "id": "SkySportBundesliga9.de",
+    "name": "Sky Sport Bundesliga 9"
+  },
+  {
+    "id": "SkySportBundesliga10.de",
+    "name": "Sky Sport Bundesliga 10"
+  },
+  {
+    "id": "SkySportF1.de",
+    "name": "Sky Sport F1"
+  },
+  {
+    "id": "SkySportNews.de",
+    "name": "Sky Sport News"
+  },
+  {
+    "id": "SonnenklarTV.de",
+    "name": "Sonnenklar TV"
+  },
+  {
+    "id": "SonyChannel.de",
+    "name": "Sony Channel"
+  },
+  {
+    "id": "SpiegelGeschichte.de",
+    "name": "Spiegel Geschichte"
+  },
+  {
+    "id": "Sport1.de",
+    "name": "Sport1"
+  },
+  {
+    "id": "Sport1Plus.de",
+    "name": "Sport1+"
+  },
+  {
+    "id": "SportdigitalFUSSBALL.de",
+    "name": "Sportdigital FUSSBALL"
+  },
+  {
+    "id": "SRFernsehen.de",
+    "name": "SR Fernsehen"
+  },
+  {
+    "id": "Studio47.de",
+    "name": "Studio 47"
+  },
+  {
+    "id": "SWRFernsehenBadenWurttemberg.de",
+    "name": "SWR Fernsehen Baden-Wurttemberg"
+  },
+  {
+    "id": "SWRFernsehenRheinlandPfalz.de",
+    "name": "SWR Fernsehen Rheinland-Pfalz"
+  },
+  {
+    "id": "SYFY.de",
+    "name": "SYFY"
+  },
+  {
+    "id": "tagesschau24.de",
+    "name": "tagesschau24"
+  },
+  {
+    "id": "TELE5.de",
+    "name": "TELE 5"
+  },
+  {
+    "id": "TelebomTeledom.de",
+    "name": "Telebom & Teledom"
+  },
+  {
+    "id": "TLC.de",
+    "name": "TLC"
+  },
+  {
+    "id": "TOGGOplus.de",
+    "name": "TOGGO plus"
+  },
+  {
+    "id": "TV8International.tr",
+    "name": "TV8 International"
+  },
+  {
+    "id": "TVA.de",
+    "name": "TVA"
+  },
+  {
+    "id": "TVBerlin.de",
+    "name": "TV Berlin"
+  },
+  {
+    "id": "TVIngolstadt.de",
+    "name": "TV Ingolstadt"
+  },
+  {
+    "id": "TVMainfranken.de",
+    "name": "TV Mainfranken"
+  },
+  {
+    "id": "TVMittelrhein.de",
+    "name": "TV Mittelrhein"
+  },
+  {
+    "id": "TVOberfranken.de",
+    "name": "TV Oberfranken"
+  },
+  {
+    "id": "TVPPolonia.pl",
+    "name": "TVP Polonia"
+  },
+  {
+    "id": "TVWestsachsen.de",
+    "name": "TV Westsachsen"
+  },
+  {
+    "id": "UlkeTV.tr",
+    "name": "Ulke TV"
+  },
+  {
+    "id": "UniversalTV.de",
+    "name": "Universal TV"
+  },
+  {
+    "id": "VOX.de",
+    "name": "VOX"
+  },
+  {
+    "id": "Voxup.de",
+    "name": "Voxup"
+  },
+  {
+    "id": "WarnerTVComedy.de",
+    "name": "Warner TV Comedy"
+  },
+  {
+    "id": "WarnerTVFilm.de",
+    "name": "Warner TV Film"
+  },
+  {
+    "id": "WarnerTVSerie.de",
+    "name": "Warner TV Serie"
+  },
+  {
+    "id": "WDRFernsehenAachen.de",
+    "name": "WDR Fernsehen Aachen"
+  },
+  {
+    "id": "WDRFernsehenBielefeld.de",
+    "name": "WDR Fernsehen Bielefeld"
+  },
+  {
+    "id": "WDRFernsehenBonn.de",
+    "name": "WDR Fernsehen Bonn"
+  },
+  {
+    "id": "WDRFernsehenDortmund.de",
+    "name": "WDR Fernsehen Dortmund"
+  },
+  {
+    "id": "WDRFernsehenDuisburg.de",
+    "name": "WDR Fernsehen Duisburg"
+  },
+  {
+    "id": "WDRFernsehenDusseldorf.de",
+    "name": "WDR Fernsehen Dusseldorf"
+  },
+  {
+    "id": "WDRFernsehenEssen.de",
+    "name": "WDR Fernsehen Essen"
+  },
+  {
+    "id": "WDRFernsehenKoln.de",
+    "name": "WDR Fernsehen Koln"
+  },
+  {
+    "id": "WDRFernsehenMunster.de",
+    "name": "WDR Fernsehen Munster"
+  },
+  {
+    "id": "WDRFernsehenSiegen.de",
+    "name": "WDR Fernsehen Siegen"
+  },
+  {
+    "id": "WDRFernsehenWuppertal.de",
+    "name": "WDR Fernsehen Wuppertal"
+  },
+  {
+    "id": "WELT.de",
+    "name": "WELT"
+  },
+  {
+    "id": "WeltderWunderTV.de",
+    "name": "Welt der Wunder TV"
+  },
+  {
+    "id": "WettercomTV.de",
+    "name": "Wetter.com TV"
+  },
+  {
+    "id": "WWTV.de",
+    "name": "WW TV"
+  },
+  {
+    "id": "ZDF.de",
+    "name": "ZDF"
+  },
+  {
+    "id": "ZDFinfo.de",
+    "name": "ZDFinfo"
+  },
+  {
+    "id": "ZDFneo.de",
+    "name": "ZDFneo"
+  }
+]
