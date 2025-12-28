@@ -13,6 +13,22 @@ import tempfile
 import time
 import shutil
 
+# Local utilities
+from epg_utils import (
+    sanitize_filename,
+    detect_gzip_bytes,
+    parse_xml_channels,
+    build_epg_program_counts,
+    load_cache_metadata as utils_load_cache_metadata,
+    save_cache_metadata as utils_save_cache_metadata,
+    add_to_cache as utils_add_to_cache,
+)
+
+# Manual EPG ID Mapping (lowercase source -> lowercase target)
+EPG_ID_MAPPING = {
+    'ard.de': 'daserste.de',
+}
+
 app = Flask(__name__)
 
 # Config laden
@@ -62,6 +78,9 @@ DATA_DIR = os.path.abspath('data')
 HLS_TEMP_DIR = os.path.join(DATA_DIR, 'hls_temp')
 EPG_CACHE_DIR = os.path.join(DATA_DIR, 'epg_cache')
 CACHE_METADATA_FILE = os.path.join(EPG_CACHE_DIR, 'metadata.json')
+LAST_XSTREAM_FILE = os.path.join(EPG_CACHE_DIR, 'last_xstream.json')
+LAST_EPG_FILE = os.path.join(EPG_CACHE_DIR, 'last_epg.xml')  # always decompressed UTF-8
+LAST_EPG_RAW_FILE = os.path.join(EPG_CACHE_DIR, 'last_epg_raw.xml.gz')
 
 # Create directories if they don't exist
 os.makedirs(HLS_TEMP_DIR, exist_ok=True)
@@ -71,50 +90,19 @@ hls_temp_base = HLS_TEMP_DIR
 
 
 def load_cache_metadata():
-    """Load cache metadata from JSON file."""
-    if os.path.exists(CACHE_METADATA_FILE):
-        try:
-            with open(CACHE_METADATA_FILE, 'r', encoding='utf-8') as f:
-                return json.load(f) or {}
-        except Exception as e:
-            app.logger.warning(f"Failed to load cache metadata: {str(e)}")
-    return {}
+    return utils_load_cache_metadata(EPG_CACHE_DIR)
 
 def save_cache_metadata(metadata):
-    """Save cache metadata to JSON file."""
-    try:
-        with open(CACHE_METADATA_FILE, 'w', encoding='utf-8') as f:
-            json.dump(metadata, f, indent=2, ensure_ascii=False)
-    except Exception as e:
-        app.logger.error(f"Failed to save cache metadata: {str(e)}")
+    utils_save_cache_metadata(EPG_CACHE_DIR, metadata)
 
 def add_to_cache(filename, file_path):
-    """Register a file in cache metadata."""
-    metadata = load_cache_metadata()
-    if 'files' not in metadata:
-        metadata['files'] = {}
-    metadata['files'][filename] = {
-        'path': file_path,
-        'size': os.path.getsize(file_path) if os.path.exists(file_path) else 0,
-        'created': datetime.now().isoformat()
-    }
-    save_cache_metadata(metadata)
+    utils_add_to_cache(EPG_CACHE_DIR, filename, file_path)
 
-def build_epg_program_counts(xml_text: str):
-    """Stream-parse XML EPG to build a map channel_id(lower) -> programme count."""
-    counts = {}
-    try:
-        for event, elem in ET.iterparse(io.StringIO(xml_text)):
-            if elem.tag == 'programme':
-                ch_id = (elem.get('channel', '') or '').strip()
-                if ch_id:
-                    key = ch_id.lower()
-                    counts[key] = counts.get(key, 0) + 1
-                elem.clear()
-        return counts
-    except Exception as e:
-        app.logger.error(f"EPG parse error: {str(e)}")
-        return {}
+def build_epg_program_counts_logged(xml_text: str):
+    counts = build_epg_program_counts(xml_text)
+    if not counts:
+        app.logger.error("EPG parse returned no counts (possible parse error)")
+    return counts
 
 
 def get_xml_text_from_memory():
@@ -181,7 +169,7 @@ def add_history():
 
 @app.route('/api/upload_xml', methods=['POST'])
 def upload_xml():
-    global xml_channels, last_xml_raw, last_xml_is_gz, last_xml_source_name
+    global xml_channels, last_xml_raw, last_xml_is_gz, last_xml_source_name, last_xml_content, epg_program_counts
     
     if 'file' not in request.files:
         return jsonify({'error': 'Keine Datei hochgeladen'}), 400
@@ -191,9 +179,7 @@ def upload_xml():
     try:
         # Prüfe ob Datei komprimiert ist
         file_content = file.read()
-        
-        # Versuche GZ zu entpacken nur wenn es wirklich GZ ist
-        is_gzipped = (file.filename.endswith('.gz') or file_content[:2] == b'\x1f\x8b')
+        is_gzipped = detect_gzip_bytes(file_content)
         # Store original raw content and metadata
         last_xml_raw = file_content
         last_xml_is_gz = is_gzipped
@@ -204,7 +190,7 @@ def upload_xml():
                 content = gzip.decompress(file_content).decode('utf-8')
                 app.logger.info("File decompressed from GZ format")
             except Exception as e:
-                app.logger.error(f"GZ decompression failed: {str(e)}")
+                app.logger.warning(f"GZ decompression failed (fallback to plain): {str(e)}")
                 # Fallback: Versuche als normale Datei
                 try:
                     content = file_content.decode('utf-8')
@@ -221,18 +207,19 @@ def upload_xml():
         except Exception as e:
             app.logger.error(f"Failed to store last_xml_content: {str(e)}")
 
-        root = ET.fromstring(content)
-        
-        xml_channels = []
-        for channel in root.findall('channel'):
-            ch_id = channel.get('id', '')
-            display_name = channel.find('display-name')
-            name = display_name.text if display_name is not None else ''
-            
-            xml_channels.append({
-                'id': ch_id,
-                'name': name
-            })
+        # Parse channels via utils
+        parsed = parse_xml_channels(content)
+        xml_channels.clear()
+        xml_channels.extend(parsed)
+        epg_program_counts.clear()
+        epg_program_counts.update(build_epg_program_counts(content))
+
+        # Persist decompressed XML as last_epg.xml
+        try:
+            with open(LAST_EPG_FILE, 'w', encoding='utf-8') as f:
+                f.write(content)
+        except Exception as e:
+            app.logger.warning(f"Failed to persist LAST_EPG_FILE: {str(e)}")
         
         # Save uploaded file to cache
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -271,11 +258,7 @@ def load_xml_url():
         
         # Prüfe ob Content GZ-komprimiert ist
         content_encoding = response.headers.get('content-encoding', '').lower()
-        
-        # Automatische GZ-Erkennung (nur wenn wirklich GZ Magic Bytes vorhanden)
-        is_gzipped = (content_encoding == 'gzip' or 
-                      url.endswith('.gz') or 
-                      response.content[:2] == b'\x1f\x8b')
+        is_gzipped = (content_encoding == 'gzip' or detect_gzip_bytes(response.content))
         # Store original raw content and metadata
         last_xml_raw = response.content
         last_xml_is_gz = is_gzipped
@@ -289,7 +272,7 @@ def load_xml_url():
                 content = gzip.decompress(response.content).decode('utf-8')
                 app.logger.info("URL content decompressed from GZ format")
             except Exception as e:
-                app.logger.error(f"GZ decompression failed: {str(e)}")
+                app.logger.warning(f"GZ decompression failed (fallback to plain): {str(e)}")
                 # Fallback: Versuche als normale Datei
                 try:
                     content = response.content.decode('utf-8')
@@ -306,18 +289,19 @@ def load_xml_url():
         except Exception as e:
             app.logger.error(f"Failed to store last_xml_content: {str(e)}")
 
-        root = ET.fromstring(content)
-        
-        xml_channels = []
-        for channel in root.findall('channel'):
-            ch_id = channel.get('id', '')
-            display_name = channel.find('display-name')
-            name = display_name.text if display_name is not None else ''
-            
-            xml_channels.append({
-                'id': ch_id,
-                'name': name
-            })
+        # Parse channels via utils
+        parsed = parse_xml_channels(content)
+        xml_channels.clear()
+        xml_channels.extend(parsed)
+        epg_program_counts.clear()
+        epg_program_counts.update(build_epg_program_counts(content))
+
+        # Persist decompressed XML as last_epg.xml
+        try:
+            with open(LAST_EPG_FILE, 'w', encoding='utf-8') as f:
+                f.write(content)
+        except Exception as e:
+            app.logger.warning(f"Failed to persist LAST_EPG_FILE: {str(e)}")
         
         # Save URL-loaded file to cache
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
@@ -342,11 +326,13 @@ def load_xml_url():
 
 @app.route('/api/load_xstream', methods=['POST'])
 def load_xstream():
-    global xstream_channels, program_list, next_entry_id, last_xstream_data, last_xstream_source_name
+    global xstream_channels, program_list, next_entry_id, last_xstream_data, last_xstream_source_name, xml_channels, epg_program_counts
     
     # Lösche alte Daten und Programmliste
-    xstream_channels = []
-    program_list = []
+    xstream_channels.clear()
+    program_list.clear()
+    xml_channels.clear()
+    epg_program_counts.clear()
     next_entry_id = 1
     last_xstream_source_name = None
     
@@ -420,6 +406,22 @@ def load_xstream():
         for ch in data:
             # Store the complete raw channel data
             xstream_channels.append(ch)
+
+        # Persist XStream list as last_xstream.json
+        try:
+            with open(LAST_XSTREAM_FILE, 'w', encoding='utf-8') as f:
+                json.dump(xstream_channels, f, ensure_ascii=False)
+        except Exception as e:
+            app.logger.warning(f"Failed to persist LAST_XSTREAM_FILE: {str(e)}")
+        
+        # Delete old EPG files (since we only loaded XStream, not EPG)
+        try:
+            if os.path.exists(LAST_EPG_FILE):
+                os.remove(LAST_EPG_FILE)
+            if os.path.exists(LAST_EPG_RAW_FILE):
+                os.remove(LAST_EPG_RAW_FILE)
+        except Exception as e:
+            app.logger.warning(f"Failed to clean old EPG files: {str(e)}")
         
         return jsonify({
             'success': True,
@@ -437,6 +439,149 @@ def load_xstream():
         app.logger.error(f"Unexpected error: {str(e)}")
         return jsonify({'error': f'Unerwarteter Fehler: {str(e)}'}), 500
 
+
+@app.route('/api/load_xstream_and_epg', methods=['POST'])
+def load_xstream_and_epg():
+    """Load XStream live streams and XMLTV EPG (single login) together and persist both."""
+    global xstream_channels, program_list, next_entry_id, last_xstream_data, last_xstream_source_name
+    global last_xml_raw, last_xml_content, last_xml_is_gz, last_xml_source_name, epg_program_counts, xml_channels
+    try:
+        data = request.get_json() or {}
+        url = (data.get('url') or '').strip().rstrip('/')
+        username = (data.get('username') or '').strip()
+        password = (data.get('password') or '').strip()
+        # Optional: custom XML URL to override default xmltv.php
+        custom_xml_url = (data.get('xml_url') or '').strip()
+        stream_type = (data.get('stream_type') or 'live').strip()
+
+        if not all([url, username, password]):
+            return jsonify({'success': False, 'error': 'Alle Felder müssen ausgefüllt sein'}), 400
+
+        # Normalize base URL
+        base_url = url.replace('/player_api.php', '')
+
+        # 1) Load XStream channels
+        action = 'get_live_streams'
+        if stream_type == 'series':
+            action = 'get_series'
+        elif stream_type == 'vod':
+            action = 'get_vod_streams'
+            
+        api_url = f"{base_url}/player_api.php?username={username}&password={password}&action={action}"
+        headers = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'application/json, text/plain, */*',
+            'Accept-Language': 'en-US,en;q=0.9',
+            'Connection': 'keep-alive'
+        }
+        response = requests.get(api_url, headers=headers, timeout=30)
+        response.raise_for_status()
+        # Parse JSON list
+        try:
+            data_list = response.json()
+        except json.JSONDecodeError:
+            return jsonify({'success': False, 'error': 'Kann XStream JSON nicht parsen'}), 500
+        if not isinstance(data_list, list):
+            return jsonify({'success': False, 'error': 'Ungültige XStream API-Antwort (kein Array)'}), 500
+        # Reset and store
+        xstream_channels.clear()
+        program_list.clear()
+        next_entry_id = 1
+        last_xstream_data = data_list
+        last_xstream_source_name = None
+        for ch in data_list:
+            # Normalize fields for Series/VOD to match Live structure
+            if stream_type == 'series':
+                # Series usually have 'series_id' instead of 'stream_id'
+                if 'series_id' in ch and 'stream_id' not in ch:
+                    ch['stream_id'] = ch['series_id']
+            elif stream_type == 'vod':
+                # VOD usually has 'stream_id' but let's ensure
+                pass
+            
+            # Add stream_type to channel object so frontend knows how to play it
+            ch['stream_type'] = stream_type
+                
+            xstream_channels.append(ch)
+        # Persist XStream list
+        try:
+            with open(LAST_XSTREAM_FILE, 'w', encoding='utf-8') as f:
+                json.dump(xstream_channels, f, ensure_ascii=False)
+        except Exception as e:
+            app.logger.warning(f"Failed to persist LAST_XSTREAM_FILE: {str(e)}")
+
+        # 2) Load EPG (xmltv.php or custom URL)
+        if custom_xml_url:
+            epg_url = custom_xml_url
+        else:
+            epg_url = f"{base_url}/xmltv.php?username={username}&password={password}"
+            
+        headers_epg = {
+            'User-Agent': headers['User-Agent'],
+            'Accept': '*/*',
+            'Accept-Encoding': 'gzip, deflate'
+        }
+        try:
+            resp_epg = requests.get(epg_url, timeout=60, headers=headers_epg)
+            resp_epg.raise_for_status()
+            epg_bytes = resp_epg.content
+            is_gz = (resp_epg.headers.get('content-encoding', '').lower() == 'gzip' or detect_gzip_bytes(epg_bytes) or epg_url.endswith('.gz'))
+            last_xml_is_gz = is_gz
+            last_xml_raw = epg_bytes
+            last_xml_source_name = 'xmltv.php' if not custom_xml_url else 'custom_url'
+            if is_gz:
+                try:
+                    last_xml_content = gzip.decompress(epg_bytes).decode('utf-8')
+                except Exception:
+                    # Fallback if not actually gzipped
+                    last_xml_content = epg_bytes.decode('utf-8', errors='replace')
+            else:
+                last_xml_content = epg_bytes.decode('utf-8', errors='replace')
+            # Persist EPG (decompressed text; raw gz if applicable)
+            try:
+                with open(LAST_EPG_FILE, 'w', encoding='utf-8') as f:
+                    f.write(last_xml_content or '')
+                if is_gz:
+                    with open(LAST_EPG_RAW_FILE, 'wb') as f:
+                        f.write(epg_bytes)
+            except Exception as e:
+                app.logger.warning(f"Failed to persist LAST_EPG files: {str(e)}")
+            # Parse channels + build counts
+            parsed = parse_xml_channels(last_xml_content or '')
+            xml_channels.clear()
+            xml_channels.extend(parsed)
+            epg_program_counts.clear()
+            epg_program_counts.update(build_epg_program_counts(last_xml_content or ''))
+        except Exception as epg_err:
+            # Graceful fallback: clear XML state and remove stale files
+            app.logger.warning(f"EPG fetch failed, proceeding with XStream only: {str(epg_err)}")
+            xml_channels.clear()
+            epg_program_counts.clear()
+            last_xml_content = None
+            last_xml_raw = None
+            last_xml_is_gz = False
+            last_xml_source_name = None
+            try:
+                if os.path.exists(LAST_EPG_FILE):
+                    os.remove(LAST_EPG_FILE)
+                if os.path.exists(LAST_EPG_RAW_FILE):
+                    os.remove(LAST_EPG_RAW_FILE)
+            except Exception as e:
+                app.logger.warning(f"Failed to clean LAST_EPG files after EPG error: {str(e)}")
+
+        return jsonify({
+            'success': True,
+            'xstream_count': len(xstream_channels),
+            'xml_count': len(xml_channels),
+            'channels_with_programs': len([k for k, v in epg_program_counts.items() if v > 0]),
+            'total_programmes': sum(epg_program_counts.values())
+        })
+    except requests.exceptions.RequestException as e:
+        return jsonify({'success': False, 'error': str(e)}), 500
+    except Exception as e:
+        app.logger.error(f"Unexpected error in load_xstream_and_epg: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)}), 500
+
 @app.route('/api/save_xstream', methods=['POST'])
 def save_xstream():
     try:
@@ -445,16 +590,15 @@ def save_xstream():
         # Optional filename from request
         req = request.get_json(silent=True) or {}
         req_name = (req.get('filename') or '').strip()
-        def sanitize_name(name: str):
-            base = os.path.basename(name)
-            return base.replace('../', '').replace('..', '')
+        def sanitize_name_local(name: str):
+            return sanitize_filename(name)
         # Create data directory if missing
         out_dir = os.path.abspath('data')
         os.makedirs(out_dir, exist_ok=True)
         # Build filename with timestamp
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         if req_name:
-            safe = sanitize_name(req_name)
+            safe = sanitize_name_local(req_name)
             if not safe.lower().endswith('.json'):
                 safe += '.json'
             out_path = os.path.join(out_dir, safe)
@@ -476,16 +620,15 @@ def save_xml():
         req = request.get_json(silent=True) or {}
         req_name = (req.get('filename') or '').strip()
         save_original = bool(req.get('original', False))
-        def sanitize_name(name: str):
-            base = os.path.basename(name)
-            return base.replace('../', '').replace('..', '')
+        def sanitize_name_local(name: str):
+            return sanitize_filename(name)
         out_dir = os.path.abspath('data')
         os.makedirs(out_dir, exist_ok=True)
         from datetime import datetime
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         # Determine filename and format
         if req_name:
-            safe = sanitize_name(req_name)
+            safe = sanitize_name_local(req_name)
             # If saving original gz, ensure .xml.gz
             if save_original and last_xml_is_gz and not safe.lower().endswith('.xml.gz'):
                 safe += '.xml.gz'
@@ -520,12 +663,11 @@ def export_xstream():
         if not last_xstream_data:
             return jsonify({'success': False, 'error': 'Keine XStream Daten geladen'}), 400
         req_name = request.args.get('filename', '').strip()
-        def sanitize_name(name: str):
-            base = os.path.basename(name)
-            return base.replace('../', '').replace('..', '')
+        def sanitize_name_local(name: str):
+            return sanitize_filename(name)
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         if req_name:
-            safe = sanitize_name(req_name)
+            safe = sanitize_name_local(req_name)
             if not safe.lower().endswith('.json'):
                 safe += '.json'
             fname = safe
@@ -702,7 +844,19 @@ def inspect_stream():
     if not all([base_url, username, password]):
         return jsonify({'error': 'XStream Zugangsdaten fehlen'}), 400
     
-    source_url = f"{base_url}/live/{username}/{password}/{stream_id}.ts"
+    # Determine stream type and extension from loaded channels
+    channel = next((ch for ch in xstream_channels if str(ch.get('stream_id')) == str(stream_id)), None)
+    stream_type = 'live'
+    extension = 'ts'
+    
+    if channel:
+        stream_type = channel.get('stream_type', 'live')
+        extension = channel.get('container_extension', 'mp4')
+        
+    if stream_type == 'vod':
+        source_url = f"{base_url}/movie/{username}/{password}/{stream_id}.{extension}"
+    else:
+        source_url = f"{base_url}/live/{username}/{password}/{stream_id}.ts"
     
     cmd = [
         'ffprobe',
@@ -764,7 +918,19 @@ def start_hls_proxy():
     if not all([base_url, username, password]):
         return jsonify({'error': 'XStream Zugangsdaten fehlen'}), 400
     
-    source_url = f"{base_url}/live/{username}/{password}/{stream_id}.ts"
+    # Determine stream type and extension from loaded channels
+    channel = next((ch for ch in xstream_channels if str(ch.get('stream_id')) == str(stream_id)), None)
+    stream_type = 'live'
+    extension = 'ts'
+    
+    if channel:
+        stream_type = channel.get('stream_type', 'live')
+        extension = channel.get('container_extension', 'mp4')
+        
+    if stream_type == 'vod':
+        source_url = f"{base_url}/movie/{username}/{password}/{stream_id}.{extension}"
+    else:
+        source_url = f"{base_url}/live/{username}/{password}/{stream_id}.ts"
     
     # Create temp dir for this stream
     stream_dir = os.path.join(hls_temp_base, stream_id)
@@ -784,15 +950,19 @@ def start_hls_proxy():
         '-reconnect', '1',
         '-reconnect_streamed', '1',
         '-reconnect_delay_max', '2',
+        '-fflags', '+genpts',  # Generate timestamps if missing
         '-i', source_url,
         '-map', '0:v:0',  # video
         '-map', f'0:a:{audio_track}',  # selected audio track
+        '-sn',  # No subtitles
         '-c:v', 'copy',
         '-c:a', 'aac',  # transcode to AAC
         '-ac', '2',
-        '-b:a', '128k',
+        '-b:a', '192k',
+        '-af', 'aresample=async=1',  # Handle timestamp drift
+        '-max_muxing_queue_size', '1024',
         '-f', 'hls',
-        '-hls_time', '2',
+        '-hls_time', '4',
         '-hls_list_size', '10',
         '-hls_flags', 'delete_segments+append_list',
         '-hls_segment_type', 'mpegts',
@@ -871,7 +1041,7 @@ def stop_hls_proxy():
 
 @app.route('/api/upload_xstream', methods=['POST'])
 def upload_xstream():
-    global xstream_channels, program_list, next_entry_id, last_xstream_data, last_xstream_source_name
+    global xstream_channels, program_list, next_entry_id, last_xstream_data, last_xstream_source_name, xml_channels, epg_program_counts
     if 'file' not in request.files:
         return jsonify({'error': 'Keine Datei hochgeladen'}), 400
     file = request.files['file']
@@ -879,7 +1049,7 @@ def upload_xstream():
         file_content = file.read()
         filename = file.filename or 'xstream.json'
         # Detect gzip
-        is_gzipped = filename.endswith('.gz') or file_content[:2] == b'\x1f\x8b'
+        is_gzipped = detect_gzip_bytes(file_content)
         if is_gzipped:
             try:
                 content_text = gzip.decompress(file_content).decode('utf-8')
@@ -895,14 +1065,25 @@ def upload_xstream():
             return jsonify({'error': 'Erwartet eine JSON-Liste von Channels'}), 400
 
         # Reset and store
-        xstream_channels = []
-        program_list = []
+        xstream_channels.clear()
+        program_list.clear()
+        xml_channels.clear()
+        epg_program_counts.clear()
         next_entry_id = 1
         last_xstream_data = data
         last_xstream_source_name = os.path.basename(filename)
 
         for ch in data:
             xstream_channels.append(ch)
+
+        # Delete old EPG files (since we only loaded XStream, not EPG)
+        try:
+            if os.path.exists(LAST_EPG_FILE):
+                os.remove(LAST_EPG_FILE)
+            if os.path.exists(LAST_EPG_RAW_FILE):
+                os.remove(LAST_EPG_RAW_FILE)
+        except Exception as e:
+            app.logger.warning(f"Failed to clean old EPG files: {str(e)}")
 
         return jsonify({'success': True, 'count': len(xstream_channels), 'channels': xstream_channels})
     except Exception as e:
@@ -913,7 +1094,7 @@ def upload_xstream():
 @app.route('/api/download_epg_bulk', methods=['POST'])
 def download_epg_bulk():
     """Download XMLTV from XStream (single login) and cache for offline validation."""
-    global last_xml_raw, last_xml_content, last_xml_is_gz, last_xml_source_name, last_bulk_epg_path, epg_program_counts
+    global xml_channels, last_xml_raw, last_xml_content, last_xml_is_gz, last_xml_source_name, last_bulk_epg_path, epg_program_counts
     try:
         cfg = load_config()
         base_url = (cfg.get('xstream', {}).get('url') or '').strip().rstrip('/')
@@ -941,7 +1122,7 @@ def download_epg_bulk():
             return jsonify({'success': False, 'error': f'XStream EPG Download fehlgeschlagen: {str(e)}'}), 500
 
         content = resp.content
-        is_gz = resp.headers.get('content-encoding', '').lower() == 'gzip' or content[:2] == b'\x1f\x8b'
+        is_gz = resp.headers.get('content-encoding', '').lower() == 'gzip' or detect_gzip_bytes(content)
         last_xml_is_gz = is_gz
         last_xml_raw = content
         last_xml_source_name = 'xmltv.php'
@@ -954,6 +1135,15 @@ def download_epg_bulk():
                 return jsonify({'success': False, 'error': f'GZ-Dekomprimierung fehlgeschlagen: {str(e)}'}), 500
         else:
             last_xml_content = content.decode('utf-8')
+        # Persist decompressed XML as last_epg.xml; also raw gz if available
+        try:
+            with open(LAST_EPG_FILE, 'w', encoding='utf-8') as f:
+                f.write(last_xml_content or '')
+            if is_gz:
+                with open(LAST_EPG_RAW_FILE, 'wb') as f:
+                    f.write(content)
+        except Exception as e:
+            app.logger.warning(f"Failed to persist LAST_EPG files: {str(e)}")
         # Save to disk in cache directory
         ts = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f"epg_bulk_{ts}.xml.gz" if is_gz else f"epg_bulk_{ts}.xml"
@@ -962,11 +1152,15 @@ def download_epg_bulk():
             f.write(content)
         last_bulk_epg_path = path
         add_to_cache(filename, path)
-        # Build counts map
-        epg_program_counts = build_epg_program_counts(last_xml_content)
+        # Build counts map and update global xml_channels
+        epg_program_counts.clear()
+        epg_program_counts.update(build_epg_program_counts_logged(last_xml_content))
+        xml_channels.clear()
+        xml_channels.extend(parse_xml_channels(last_xml_content))
         return jsonify({
             'success': True,
             'path': path,
+            'channels': xml_channels,
             'channels_with_programs': len([k for k,v in epg_program_counts.items() if v>0]),
             'total_programmes': sum(epg_program_counts.values()),
             'is_gz': is_gz
@@ -974,6 +1168,69 @@ def download_epg_bulk():
     except Exception as e:
         app.logger.exception(f"Error downloading bulk EPG: {str(e)}")
         return jsonify({'success': False, 'error': str(e)}), 500
+
+
+@app.route('/api/load_last_cache', methods=['GET'])
+def load_last_cache():
+    """Load last persisted XStream and EPG into memory after restart."""
+    global xstream_channels, xml_channels, last_xml_content, epg_program_counts, last_xml_raw, last_xml_is_gz, last_xml_source_name
+    loaded = {'xstream': False, 'xml': False, 'pollution_detected': False}
+    # Load XStream
+    try:
+        if os.path.exists(LAST_XSTREAM_FILE):
+            with open(LAST_XSTREAM_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f) or []
+            if isinstance(data, list) and len(data) > 0:
+                xstream_channels.clear()
+                xstream_channels.extend(data)
+                loaded['xstream'] = True
+                app.logger.info(f"Loaded {len(xstream_channels)} XStream channels from cache")
+    except Exception as e:
+        app.logger.warning(f"Failed to load LAST_XSTREAM_FILE: {str(e)}")
+        xstream_channels.clear()
+    # Load EPG (decompressed text)
+    try:
+        if os.path.exists(LAST_EPG_FILE):
+            with open(LAST_EPG_FILE, 'r', encoding='utf-8') as f:
+                content = f.read()
+            # Guard: check if content looks like XML EPG (has 'channel' and 'programme' tags)
+            if '<channel' not in content or '<programme' not in content:
+                app.logger.warning(f"LAST_EPG_FILE does not look like valid XMLTV (missing channel/programme tags)")
+                xml_channels.clear()
+                loaded['pollution_detected'] = True
+            else:
+                globals()['last_xml_content'] = content
+                parsed = parse_xml_channels(content or '')
+                xml_channels.clear()
+                xml_channels.extend(parsed)
+                epg_program_counts.clear()
+                epg_program_counts.update(build_epg_program_counts(content or ''))
+                globals()['last_xml_source_name'] = os.path.basename(LAST_EPG_FILE)
+                loaded['xml'] = True
+                app.logger.info(f"Loaded {len(xml_channels)} XML EPG channels from cache with {sum(epg_program_counts.values())} programmes")
+        else:
+            xml_channels.clear()
+    except Exception as e:
+        app.logger.warning(f"Failed to load LAST_EPG_FILE: {str(e)}")
+        xml_channels.clear()
+    # Enrich XML channels with programme counts
+    enriched_xml = []
+    for ch in xml_channels:
+        c_id = ch.get('id', '')
+        count = epg_program_counts.get(c_id.lower(), 0)
+        new_ch = ch.copy()
+        new_ch['programmes'] = count
+        enriched_xml.append(new_ch)
+
+    return jsonify({
+        'success': True,
+        'loaded': loaded,
+        'xstream_count': len(xstream_channels),
+        'xml_count': len(xml_channels),
+        'xstream': xstream_channels,
+        'xml': enriched_xml,
+        'programme_counts_total': sum(epg_program_counts.values())
+    })
 
 
 @app.route('/api/validate_epg_offline', methods=['POST'])
@@ -992,11 +1249,19 @@ def validate_epg_offline():
             epg_id_raw = ch.get('epg_channel_id') or ''
             epg_id = epg_id_raw.strip()
             epg_key = epg_id.lower()
+            
+            mapped_id = None
+            # Apply manual mapping
+            if epg_key in EPG_ID_MAPPING:
+                mapped_id = EPG_ID_MAPPING[epg_key]
+                epg_key = mapped_id
+                
             if not epg_id:
                 results.append({
                     'stream_id': ch.get('stream_id'),
                     'name': ch.get('name', ''),
                     'epg_id': epg_id_raw,
+                    'mapped_id': None,
                     'status': 'missing_epg_id',
                     'programmes': 0
                 })
@@ -1006,6 +1271,7 @@ def validate_epg_offline():
                     'stream_id': ch.get('stream_id'),
                     'name': ch.get('name', ''),
                     'epg_id': epg_id_raw,
+                    'mapped_id': mapped_id,
                     'status': 'not_found',
                     'programmes': 0
                 })
@@ -1016,6 +1282,7 @@ def validate_epg_offline():
                     'stream_id': ch.get('stream_id'),
                     'name': ch.get('name', ''),
                     'epg_id': epg_id_raw,
+                    'mapped_id': mapped_id,
                     'status': status,
                     'programmes': count
                 })
@@ -1038,6 +1305,11 @@ def get_epg_programs():
             return jsonify({'success': False, 'error': 'Keine EPG XML geladen.'}), 400
         programmes = []
         epg_key = epg_id.lower()
+        
+        # Apply manual mapping
+        if epg_key in EPG_ID_MAPPING:
+            epg_key = EPG_ID_MAPPING[epg_key]
+            
         found_count = 0
         try:
             for event, elem in ET.iterparse(io.StringIO(xml_text)):
@@ -1080,12 +1352,31 @@ def get_channels():
     try:
         search = request.args.get('search', '').lower()
         
-        filtered_xstream = [ch for ch in xstream_channels if search in ch['name'].lower()] if search else xstream_channels
-        filtered_xml = [ch for ch in xml_channels if search in ch['name'].lower()] if search else xml_channels
+        # Pollution guard: if xml_channels contains stream_id or has XStream structure, clear it
+        if xml_channels and any('stream_id' in ch for ch in xml_channels[:10]):
+            app.logger.warning(f"Pollution detected in xml_channels: contains 'stream_id'. Clearing.")
+            xml_channels.clear()
+        
+        filtered_xstream = [ch for ch in xstream_channels if search in ch.get('name', '').lower()] if search else xstream_channels
+        filtered_xml = [ch for ch in xml_channels if search in ch.get('name', '').lower()] if search else xml_channels
+        
+        # Enrich XML channels with programme counts
+        enriched_xml = []
+        for ch in (filtered_xml or []):
+            c_id = ch.get('id', '')
+            count = epg_program_counts.get(c_id.lower(), 0)
+            new_ch = ch.copy()
+            new_ch['programmes'] = count
+            enriched_xml.append(new_ch)
         
         return jsonify({
             'xstream': filtered_xstream,
-            'xml': filtered_xml
+            'xml': enriched_xml,
+            '_debug': {
+                'xstream_count': len(xstream_channels),
+                'xml_count': len(xml_channels),
+                'search': search
+            }
         })
     except Exception as e:
         app.logger.error(f"Error in get_channels: {str(e)}")
@@ -1288,17 +1579,13 @@ def load_from_cache():
         last_xml_is_gz = is_gz
         last_xml_source_name = filename
         
-        # Parse channels
-        root = ET.fromstring(content)
-        xml_channels = []
-        for channel in root.findall('channel'):
-            ch_id = channel.get('id', '')
-            display_name = channel.find('display-name')
-            name = display_name.text if display_name is not None else ''
-            xml_channels.append({'id': ch_id, 'name': name})
+        # Parse channels via utils
+        xml_channels.clear()
+        xml_channels.extend(parse_xml_channels(content))
         
         # Build program counts
-        epg_program_counts = build_epg_program_counts(content)
+        epg_program_counts.clear()
+        epg_program_counts.update(build_epg_program_counts_logged(content))
         
         return jsonify({
             'success': True,

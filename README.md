@@ -2,24 +2,30 @@
 
 ## Übersicht
 
-EpgChecker ist eine webbasierte Anwendung zur Verwaltung und Überprüfung von EPG (Electronic Program Guide) Daten für IPTV-Dienste. Die Anwendung ermöglicht es, XStream-Kanäle mit XML-EPG-Daten zu vergleichen und eine Programmliste zu erstellen.
+EpgChecker ist eine webbasierte Anwendung zur Verwaltung, Prüfung und Vorschau von EPG (Electronic Program Guide) Daten für IPTV-Dienste. Die Anwendung lädt XStream-Kanäle, verarbeitet XMLTV-EPG (auch .gz), vergleicht `epg_channel_id` gegen das EPG und kann Live-Streams direkt im Browser (HLS) oder per Proxy mit AAC-Audio abspielen.
 
 ## Hauptfunktionen
 
 - **XStream API Integration**: Lädt Kanallisten von XStream/Xtream Codes Servern
-- **XML EPG Verarbeitung**: Unterstützt das Laden von XML EPG-Dateien (auch .gz komprimiert) via Upload oder URL
-- **Detailansicht**: Zeigt detaillierte Informationen zu XStream- und XML-Einträgen
-- **Programmliste**: Erstellt eine nummerierte Liste von Kanälen mit XStream- und optional XML-Zuordnungen
-- **Auto-Match**: Automatische Zuordnung von Kanälen basierend auf Namensähnlichkeit
-- **Suchfunktion**: Filtert Kanäle nach Namen
-- **History**: Speichert zuletzt verwendete URLs für schnellen Zugriff
+- **XMLTV EPG Verarbeitung**: Laden per Upload/URL; automatische Erkennung und Dekomprimierung von `.gz`
+- **EPG-Validierung (offline)**: Prüft `epg_channel_id` gegen das geladene XML (Programme zählen, Status je Kanal)
+- **EPG-Auszug**: Schneller Raw-Auszug von Programmen einer EPG-ID (`/api/get_epg_programs`)
+- **Live-Stream Wiedergabe**:
+  - Direktes HLS oder TS im Browser
+  - **ffmpeg AAC-Proxy (HLS)** für kompatibles Audio mit Track-Auswahl
+  - Audio-Track-Inspektion via `ffprobe`
+- **Programmliste**: Nummerierte Liste XStream/XML-Zuordnung; Anzeige als Tabelle
+- **Auto-Match**: Namensähnlichkeit (SequenceMatcher) zur schnellen Zuordnung
+- **Suche & Pagination**: Filter und performante Anzeige für große Listen
+- **EPG Cache**: Dateien im Verzeichnis `data/epg_cache/` mit Metadaten, Laden/Löschen über UI
 
 ## Installation
 
 ### Voraussetzungen
 
-- Python 3.7 oder höher
+- Python 3.8 oder höher
 - pip (Python Package Manager)
+- Systemweite Tools: `ffmpeg` und `ffprobe` (für Proxy/Audio-Analyse)
 
 ### Schritt-für-Schritt Installation
 
@@ -62,10 +68,10 @@ cp config.json.example config.json
 ### Server starten
 
 ```bash
-python epg_mapper_web.py
+python3 epg_mapper_web.py
 ```
 
-Die Anwendung ist dann unter `http://localhost:8081` erreichbar.
+Die Anwendung ist dann unter `http://localhost:8081` erreichbar (Konfiguration in `config.json`).
 
 ### XStream Daten laden
 
@@ -118,29 +124,42 @@ Die Auto-Match Funktion vergleicht automatisch die Namen von XStream- und XML-Ka
 
 ### Backend (Flask)
 
-- `epg_mapper_web.py`: Hauptanwendung mit REST API Endpoints
+- [epg_mapper_web.py](epg_mapper_web.py): Hauptanwendung mit REST API Endpoints
+- [epg_utils.py](epg_utils.py): Wiederverwendbare Hilfsfunktionen (XML-Parsen, Programmzählung, Cache-Metadaten, Filename-Sanitizer, gzip-Erkennung)
 - In-Memory Datenspeicherung für Kanäle und Zuordnungen
-- Unterstützt GZ-komprimierte XML-Dateien
-- Validierung und Fehlerbehandlung
+- Unterstützt GZ-komprimierte XML-Dateien; Offline-Validierung; HLS-Proxy via ffmpeg
 
 ### Frontend (HTML/JavaScript)
 
-- `templates/index.html`: Single-Page Application
-- Responsive Design
-- Pagination für große Kanallisten
-- Echtzeit-Suche und Filterung
+- [templates/index.html](templates/index.html): Single-Page Application
+- [static/style.css](static/style.css): Ausgelagerte Styles für bessere Übersicht
+- Responsive Design, Pagination, Suche, Modale, Player (HLS.js)
 
-### API Endpoints
+### API Endpoints (Auswahl)
+- `POST /api/load_xstream_and_epg`: Lädt XStream-Senderliste und XMLTV-EPG gemeinsam und persistiert beide
 
-- `GET /api/config`: Lädt Konfiguration
-- `POST /api/add_history`: Fügt URL zur History hinzu
-- `POST /api/upload_xml`: XML-Datei Upload
+- `GET /api/config`: Konfiguration laden
+- `POST /api/add_history`: URL zur History hinzufügen
+- `POST /api/upload_xml`: XML-Datei Upload (auch `.gz`)
 - `POST /api/load_xml_url`: XML von URL laden
 - `POST /api/load_xstream`: XStream Daten laden
 - `GET /api/get_channels`: Kanäle abrufen (mit Suchfilter)
 - `POST /api/add_to_program_list`: Zur Programmliste hinzufügen
 - `GET /api/get_program_list`: Programmliste abrufen
 - `POST /api/auto_match`: Automatische Zuordnung
+- `POST /api/download_epg_bulk`: Einmaliges Laden des XMLTV von XStream (Login)
+- `POST /api/validate_epg_offline`: EPG-Validierung gegen gecachte XML
+- `GET /api/get_epg_programs?epg_id=...`: Raw-Programme für EPG-ID (Limit)
+- `GET /api/export_xml`: XML/Original exportieren
+- `GET /api/export_xstream`: XStream JSON exportieren
+- `GET /api/list_cache`: Cache-Dateien auflisten
+- `POST /api/load_from_cache`: XML aus Cache laden
+- `POST /api/delete_cache_file`: Cache-Datei löschen
+ - `GET /api/load_last_cache`: Letzte geladene XStream-/EPG-Daten aus `data/epg_cache/` wiederherstellen
+- `GET /api/inspect_stream?stream_id=...`: Audio-Track-Inspektion via ffprobe
+- `POST /api/start_hls_proxy`: ffmpeg-HLS-Proxy starten (AAC)
+- `GET /api/proxy_hls/<id>/index.m3u8`: HLS-Playlist aus Proxy
+- `GET /api/proxy_hls/<id>/<segment>`: HLS-Segmente aus Proxy
 
 ## Konfiguration
 
@@ -174,6 +193,22 @@ Die Konfiguration wird in `config.json` gespeichert und enthält:
 - Prüfen Sie die URL-Erreichbarkeit
 
 ### Leere Kanallisten
+### Daten nach Neustart nicht sichtbar
+
+- Die Anwendung schreibt die letzten geladenen Dateien nach `data/epg_cache/`:
+  - `last_xstream.json`: XStream-Liste
+  - `last_epg.xml`: EPG (immer dekomprimiert, UTF-8)
+  - optional `last_epg_raw.xml.gz`: falls EPG komprimiert heruntergeladen wurde
+- Beim Start lädt das Frontend automatisch `GET /api/load_last_cache`, um diese Daten wiederherzustellen.
+
+### ffmpeg/ffprobe nicht gefunden
+
+- Installieren Sie `ffmpeg`/`ffprobe` systemweit (z.B. Ubuntu/Debian):
+  ```bash
+  sudo apt update
+  sudo apt install ffmpeg
+  ```
+  Prüfen: `ffmpeg -version`, `ffprobe -version`
 
 - Überprüfen Sie die API-Antwort in den Browser-Entwicklertools (F12)
 - Prüfen Sie die Server-Logs für Fehlermeldungen
@@ -187,6 +222,8 @@ Die Konfiguration wird in `config.json` gespeichert und enthält:
 - **xml.etree.ElementTree**: XML-Parser
 - **gzip**: Dekompression von .gz Dateien
 - **difflib**: String-Ähnlichkeitsvergleich für Auto-Match
+- **Hls.js** (Frontend): HLS-Wiedergabe im Browser
+- **ffmpeg/ffprobe** (System): Proxy/Audio-Track-Analyse
 
 ### Unterstützte Formate
 
